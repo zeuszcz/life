@@ -10,9 +10,11 @@ export const TASKS_SYSTEM = `Ты — внутриигровой ИИ-наста
 выполнимых мини-заданий — коротких шагов, которые реально приближают к цели.
 
 Правила:
+- Это план на ОДНУ неделю (недельный спринт по цели).
 - Каждое задание — отдельная короткая строка (действие), напр.: "Сделать 3 тренировки на этой неделе".
 - Плохо: абстракции вроде "стать лучше". Хорошо: измеримые шаги.
 - Двигайся по нарастанию: от простого старта к более сложному.
+- Если указаны уже выполненные шаги прошлых недель — НЕ повторяй их, продолжай прогресс и повышай планку.
 - Учитывай, сколько времени в неделю готов вкладывать игрок.
 - Всё на русском. Верни только список заданий по схеме, без лишнего текста.`;
 
@@ -26,6 +28,7 @@ ${DOMAIN_LINES}
 Всё на русском. Верни только структуру по схеме.`;
 
 export function buildTasksPrompt(goal: GoalContext): string {
+  const week = goal.week ?? 1;
   const lines = [
     `Домен: ${goal.domain} (${DOMAIN_META[goal.domain].label}).`,
     `Цель: ${goal.title}.`,
@@ -34,7 +37,16 @@ export function buildTasksPrompt(goal: GoalContext): string {
   if (goal.motivation) lines.push(`Зачем: ${goal.motivation}`);
   if (goal.description) lines.push(`Детали: ${goal.description}`);
   lines.push(`Времени в неделю: ~${goal.hoursPerWeek} ч.`);
-  lines.push(`Разбей эту цель на 4-7 мини-заданий.`);
+  if (week > 1 && goal.previousTasks && goal.previousTasks.length > 0) {
+    lines.push("");
+    lines.push(`Это план на НЕДЕЛЮ ${week}. Уже выполнено в прошлые недели:`);
+    for (const t of goal.previousTasks.slice(-15)) lines.push(`- ${t}`);
+    lines.push(
+      `Сгенерируй 4-7 СЛЕДУЮЩИХ шагов на эту неделю: продолжай прогресс, не повторяй сделанное, повышай сложность.`,
+    );
+  } else {
+    lines.push(`Разбей эту цель на 4-7 мини-заданий на первую неделю.`);
+  }
   return lines.join("\n");
 }
 

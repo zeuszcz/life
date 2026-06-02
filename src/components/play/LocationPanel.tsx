@@ -14,6 +14,7 @@ import {
   completeGoal,
   addSuggestedGoal,
   deleteGoal,
+  nextWeek,
   type GoalView,
 } from "@/server/actions/goals";
 import { toggleTask, removeTask, addTask } from "@/server/actions/tasks";
@@ -113,6 +114,24 @@ export default function LocationPanel({
     refresh();
   }
 
+  async function onNextWeek(goalId: string) {
+    setBusy(true);
+    const res = await nextWeek(goalId);
+    setBusy(false);
+    if (res.error) {
+      pushToast(res.error, "⚠️");
+      return;
+    }
+    if (res.play) setPlay(res.play);
+    if (res.advanced) {
+      if (res.gainedXp) pushToast(`Неделя пройдена! +${res.gainedXp} XP · +${res.gainedGold} 🪙`, "🎉");
+      pushToast(`Готовы шаги на неделю ${res.week} 🎯`, "🤖");
+      if (res.leveledUp) pushToast(`Новый уровень — ${res.newLevel}!`, "⬆️");
+      res.newAchievements?.forEach((a) => pushToast(`Достижение: ${a.title}`, a.icon));
+    }
+    refresh();
+  }
+
   async function acceptSuggestion() {
     if (!suggestion) return;
     setBusy(true);
@@ -157,6 +176,7 @@ export default function LocationPanel({
               onRemoveTask={onRemoveTask}
               onAddTask={onAddTask}
               onComplete={() => onComplete(g.id)}
+              onNextWeek={() => onNextWeek(g.id)}
               onDelete={async () => {
                 await deleteGoal(g.id);
                 refresh();
@@ -230,6 +250,7 @@ function GoalCard({
   onRemoveTask,
   onAddTask,
   onComplete,
+  onNextWeek,
   onDelete,
 }: {
   goal: GoalView;
@@ -239,6 +260,7 @@ function GoalCard({
   onRemoveTask: (taskId: string) => void;
   onAddTask: (goalId: string, title: string) => void;
   onComplete: () => void;
+  onNextWeek: () => void;
   onDelete: () => void;
 }) {
   const [newTask, setNewTask] = useState("");
@@ -254,6 +276,10 @@ function GoalCard({
       {goal.motivation && <p className="mt-0.5 text-xs text-[var(--muted)]">{goal.motivation}</p>}
 
       <div className="mt-2 flex items-center gap-2">
+        <span className="chip text-[10px]" title="Недельный спринт по цели">Неделя {goal.week}</span>
+        {goal.weeksCompleted > 0 && (
+          <span className="text-[10px] text-[var(--muted)]">✓ {goal.weeksCompleted} пройдено</span>
+        )}
         <div className="xp-track flex-1"><div className="xp-fill" style={{ width: `${pct}%`, background: color }} /></div>
         <span className="text-xs text-[var(--muted)]">{goal.doneCount}/{goal.total}</span>
       </div>
@@ -286,10 +312,33 @@ function GoalCard({
             }
           }}
         />
-        <button className="btn btn-primary" disabled={busy || !allDone} onClick={onComplete} title={allDone ? "" : "Выполни все задания"}>
-          Завершить ✓
-        </button>
       </div>
+
+      {allDone ? (
+        <div className="mt-3 rounded-md border border-[var(--border)] bg-black/20 p-3 text-center">
+          <div className="text-sm font-semibold text-white">🎉 Неделя {goal.week} пройдена!</div>
+          <p className="mt-0.5 text-xs text-[var(--muted)]">ИИ составит следующие шаги для этой же цели.</p>
+          <div className="mt-2 flex flex-wrap justify-center gap-2">
+            <button className="btn btn-primary" disabled={busy} onClick={onNextWeek}>
+              {busy ? "🤖 Готовлю следующие шаги…" : "Следующие шаги →"}
+            </button>
+            <button className="btn btn-ghost" disabled={busy} onClick={onComplete} title="Закрыть цель — она перейдёт в завершённые">
+              Завершить цель ✓
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div className="mt-2 text-right">
+          <button
+            className="text-xs text-[var(--muted)] hover:text-white underline-offset-2 hover:underline"
+            disabled={busy}
+            onClick={onComplete}
+            title="Закрыть цель в любой момент, не выполняя все шаги"
+          >
+            Завершить цель досрочно
+          </button>
+        </div>
+      )}
     </div>
   );
 }

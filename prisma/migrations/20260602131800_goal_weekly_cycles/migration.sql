@@ -1,0 +1,5 @@
+-- AlterTable
+ALTER TABLE "Goal" ADD COLUMN     "week" INTEGER NOT NULL DEFAULT 1;
+
+-- AlterTable
+ALTER TABLE "GoalTask" ADD COLUMN     "week" INTEGER NOT NULL DEFAULT 1;

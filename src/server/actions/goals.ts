@@ -5,10 +5,13 @@ import { prisma } from "@/lib/prisma";
 import { requireUserId } from "@/server/auth-util";
 import { GoalInputSchema, NextGoalSchema, type GoalInput } from "@/lib/zod-schemas";
 import { LOCATION_TO_DOMAIN, type Domain, type LocationKey } from "@/lib/game/constants";
+import type { PlayState } from "@/lib/types";
+import type { UnlockedAchievement } from "@/server/services/progression";
 import {
   createGoalWithTasks,
   createGoalWithGivenTasks,
   completeGoalAndSuggest,
+  generateNextWeekTasks,
 } from "@/server/services/goals";
 
 export interface TaskView {
@@ -23,19 +26,25 @@ export interface GoalView {
   title: string;
   motivation: string;
   status: string;
-  tasks: TaskView[];
+  week: number; // current weekly sprint
+  weeksCompleted: number; // fully finished weeks so far
+  tasks: TaskView[]; // CURRENT week's tasks only
   doneCount: number;
   total: number;
 }
 
 function toGoalView(goal: Goal & { tasks: GoalTask[] }): GoalView {
-  const tasks = goal.tasks.map((t) => ({ id: t.id, title: t.title, done: t.done, source: t.source }));
+  // Show only the current week's checklist; past weeks count as completed.
+  const current = goal.tasks.filter((t) => t.week === goal.week);
+  const tasks = current.map((t) => ({ id: t.id, title: t.title, done: t.done, source: t.source }));
   return {
     id: goal.id,
     domain: goal.domain as Domain,
     title: goal.title,
     motivation: goal.motivation,
     status: goal.status,
+    week: goal.week,
+    weeksCompleted: Math.max(0, goal.week - 1),
     tasks,
     doneCount: tasks.filter((t) => t.done).length,
     total: tasks.length,
@@ -112,6 +121,34 @@ export async function addSuggestedGoal(
 export async function completeGoal(goalId: string) {
   const userId = await requireUserId();
   return completeGoalAndSuggest(userId, goalId);
+}
+
+export interface NextWeekResult {
+  ok?: boolean;
+  error?: string;
+  advanced?: boolean;
+  week?: number;
+  play?: PlayState;
+  gainedXp?: number;
+  gainedGold?: number;
+  leveledUp?: boolean;
+  newLevel?: number;
+  newAchievements?: UnlockedAchievement[];
+}
+
+/**
+ * Finish the current week and generate the next week's tasks for the SAME goal
+ * (one AI call). The goal stays active — the user closes it via completeGoal.
+ */
+export async function nextWeek(goalId: string): Promise<NextWeekResult> {
+  const userId = await requireUserId();
+  try {
+    const r = await generateNextWeekTasks(userId, goalId);
+    return { ok: true, ...r, play: r.play ?? undefined };
+  } catch (e) {
+    console.error("[goals] nextWeek failed", e);
+    return { error: "Не удалось сгенерировать следующие шаги. Попробуйте ещё раз." };
+  }
 }
 
 export async function deleteGoal(goalId: string): Promise<{ ok: boolean }> {

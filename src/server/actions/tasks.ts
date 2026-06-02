@@ -84,9 +84,10 @@ export async function addTask(
   if (t.length < 2) return { error: "Слишком коротко" };
   const goal = await prisma.goal.findFirst({ where: { id: goalId, userId } });
   if (!goal) return { error: "Цель не найдена" };
-  const count = await prisma.goalTask.count({ where: { goalId } });
+  // Manual tasks join the goal's current weekly sprint.
+  const count = await prisma.goalTask.count({ where: { goalId, week: goal.week } });
   const task = await prisma.goalTask.create({
-    data: { goalId, title: t, order: count, source: "manual" },
+    data: { goalId, title: t, order: count, week: goal.week, source: "manual" },
   });
   return { ok: true, task: { id: task.id, title: task.title, done: task.done, source: task.source } };
 }

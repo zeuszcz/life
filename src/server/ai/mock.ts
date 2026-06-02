@@ -18,6 +18,18 @@ export class MockProvider implements AIProvider {
   async generateGoalTasks(goal: GoalContext): Promise<GoalTasksResult> {
     const t = goal.title.trim();
     const weekly = Math.max(2, Math.min(6, Math.round(goal.hoursPerWeek / 2)));
+    const week = goal.week ?? 1;
+    if (week > 1) {
+      return GoalTasksSchema.parse({
+        tasks: [
+          `Неделя ${week}: повторить ключевое действие по «${t}» ${weekly} раз(а)`,
+          `Усложнить задачу по «${t}» на 10–20%`,
+          `Закрыть слабое место, которое мешало на прошлой неделе`,
+          `Найти новый приём или ресурс по теме «${t}»`,
+          `Подвести итоги недели ${week} и наметить следующий шаг`,
+        ],
+      });
+    }
     return GoalTasksSchema.parse({
       tasks: [
         `Разобраться, с чего начать: «${t}» (20-30 минут)`,

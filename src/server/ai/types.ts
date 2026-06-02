@@ -7,6 +7,10 @@ export interface GoalContext {
   motivation: string;
   currentState: string;
   hoursPerWeek: number;
+  /** Which weekly sprint we are generating (1 = the first week). */
+  week?: number;
+  /** Titles already completed in previous weeks — for continuity / no repeats. */
+  previousTasks?: string[];
 }
 
 export interface GoalTasksResult {

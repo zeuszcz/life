@@ -67,9 +67,12 @@ function GoalRow({ g }: { g: GoalView }) {
   const pct = g.total > 0 ? Math.round((g.doneCount / g.total) * 100) : 0;
   return (
     <div className="card p-4" style={{ borderLeft: `4px solid ${dm.color}` }}>
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-2">
         <h4 className="font-semibold text-white">{dm.icon} {g.title}</h4>
-        <span className="chip text-xs">{g.doneCount}/{g.total}</span>
+        <div className="flex shrink-0 items-center gap-1.5">
+          <span className="chip text-[10px]" title="Текущий недельный спринт">Нед. {g.week}</span>
+          <span className="chip text-xs">{g.doneCount}/{g.total}</span>
+        </div>
       </div>
       <div className="mt-2 xp-track"><div className="xp-fill" style={{ width: `${pct}%`, background: dm.color }} /></div>
       <ul className="mt-2 flex flex-col gap-0.5 text-sm">
