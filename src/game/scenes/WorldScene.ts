@@ -10,7 +10,7 @@ export const MAP_W = 26;
 export const MAP_H = 20;
 const SPEED = 130;
 const AVATAR_SCALE = 0.72;
-const OVER_LAYERS = ["eyes", "pants", "shoes", "shirt", "hair"] as const;
+const OVER_LAYERS = ["head", "eyes", "pants", "shoes", "shirt", "hair"] as const;
 
 interface Door {
   key: LocationKey;
