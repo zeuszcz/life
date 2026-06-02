@@ -1,0 +1,6 @@
+# Caddy automatically provisions and renews a Let's Encrypt certificate for the
+# domain (requires ports 80/443 open and DNS pointing at this server).
+{$DOMAIN:life.innertalk.space} {
+	encode zstd gzip
+	reverse_proxy web:3000
+}

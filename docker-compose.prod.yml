@@ -1,0 +1,47 @@
+# Production stack for a host that ALREADY runs nginx on :80/:443
+# (e.g. the innertalk.space box). No Caddy — nginx terminates TLS and proxies
+# life.innertalk.space -> 127.0.0.1:8092 (see deploy/nginx/life.innertalk.space.conf).
+#
+#   cp .env.production.example .env   # set AUTH_SECRET etc
+#   docker compose -f docker-compose.prod.yml up -d --build
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-life}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-life}
+      POSTGRES_DB: ${POSTGRES_DB:-life}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-life} -d ${POSTGRES_DB:-life}"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+  web:
+    build:
+      context: .
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://${POSTGRES_USER:-life}:${POSTGRES_PASSWORD:-life}@db:5432/${POSTGRES_DB:-life}?schema=public
+      AUTH_SECRET: ${AUTH_SECRET:?Set AUTH_SECRET in .env}
+      AUTH_URL: ${AUTH_URL:-https://life.innertalk.space}
+      AUTH_TRUST_HOST: "true"
+      AI_PROVIDER: ${AI_PROVIDER:-mock}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      ANTHROPIC_MODEL: ${ANTHROPIC_MODEL:-claude-sonnet-4-6}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4o}
+    depends_on:
+      db:
+        condition: service_healthy
+    # Bound to localhost only; the host's nginx is the public entrypoint.
+    ports:
+      - "127.0.0.1:8092:3000"
+
+volumes:
+  pgdata:

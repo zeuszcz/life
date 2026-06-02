@@ -1,0 +1,153 @@
+// Prisma schema for "Life" — the self-development game.
+// Provider is PostgreSQL in every environment. Enum-like fields are stored as
+// String and validated in the app layer (Zod) so the schema stays portable and
+// migrations stay friction-free.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String            @id @default(cuid())
+  email        String            @unique
+  name         String?
+  passwordHash String
+  createdAt    DateTime          @default(now())
+  character    Character?
+  goals        Goal[]
+  roadmaps     Roadmap[]
+  achievements UserAchievement[]
+  activity     ActivityLog[]
+}
+
+model Character {
+  id         String          @id @default(cuid())
+  userId     String          @unique
+  user       User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name       String
+  appearance Json // { body, hair, hairColor, outfit, outfitColor }
+  level      Int             @default(1)
+  xp         Int             @default(0) // total accumulated xp
+  gold       Int             @default(0)
+  createdAt  DateTime        @default(now())
+  stats      Stat[]
+  inventory  InventoryItem[]
+}
+
+model Stat {
+  id          String    @id @default(cuid())
+  characterId String
+  character   Character @relation(fields: [characterId], references: [id], onDelete: Cascade)
+  domain      String // fitness | career | wellbeing | knowledge
+  value       Int       @default(0) // domain xp
+  level       Int       @default(1)
+
+  @@unique([characterId, domain])
+}
+
+model Goal {
+  id           String    @id @default(cuid())
+  userId       String
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  domain       String
+  title        String
+  description  String    @default("")
+  motivation   String    @default("") // the "why"
+  currentState String    @default("")
+  targetDate   DateTime?
+  hoursPerWeek Int       @default(3)
+  status       String    @default("active") // active | done | archived
+  createdAt    DateTime  @default(now())
+}
+
+model Roadmap {
+  id         String      @id @default(cuid())
+  userId     String
+  user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  provider   String
+  model      String
+  summary    String      @default("")
+  version    Int         @default(1)
+  createdAt  DateTime    @default(now())
+  milestones Milestone[]
+}
+
+model Milestone {
+  id          String   @id @default(cuid())
+  roadmapId   String
+  roadmap     Roadmap  @relation(fields: [roadmapId], references: [id], onDelete: Cascade)
+  domain      String
+  title       String
+  description String   @default("")
+  order       Int      @default(0)
+  targetWeeks Int      @default(4)
+  xpReward    Int      @default(100)
+  status      String   @default("active") // active | done
+  quests      Quest[]
+}
+
+model Quest {
+  id              String    @id @default(cuid())
+  milestoneId     String
+  milestone       Milestone @relation(fields: [milestoneId], references: [id], onDelete: Cascade)
+  domain          String
+  locationKey     String // home | gym | work | study
+  title           String
+  description     String    @default("")
+  type            String    @default("oneoff") // oneoff | daily | weekly
+  difficulty      String    @default("medium") // easy | medium | hard
+  xpReward        Int       @default(20)
+  goldReward      Int       @default(5)
+  status          String    @default("active") // active | done
+  completedAt     DateTime?
+  lastCompletedAt DateTime? // for repeatable quests
+  createdAt       DateTime  @default(now())
+}
+
+model AchievementDef {
+  key           String            @id
+  title         String
+  description   String
+  icon          String            @default("🏆")
+  conditionType String // first_quest | quests_completed | level | domain_level | gold_earned
+  threshold     Int               @default(0)
+  domain        String?
+  unlocked      UserAchievement[]
+}
+
+model UserAchievement {
+  id         String         @id @default(cuid())
+  userId     String
+  user       User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  key        String
+  def        AchievementDef @relation(fields: [key], references: [key])
+  unlockedAt DateTime       @default(now())
+
+  @@unique([userId, key])
+}
+
+model InventoryItem {
+  id          String    @id @default(cuid())
+  characterId String
+  character   Character @relation(fields: [characterId], references: [id], onDelete: Cascade)
+  itemKey     String
+  kind        String // furniture | cosmetic | gear | trophy
+  name        String
+  cost        Int       @default(0)
+  source      String    @default("shop") // shop | real_purchase | reward
+  acquiredAt  DateTime  @default(now())
+}
+
+model ActivityLog {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      String // quest_complete | level_up | achievement | purchase | real_achievement | real_purchase
+  payload   Json
+  createdAt DateTime @default(now())
+}

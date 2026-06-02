@@ -1,0 +1,210 @@
+@import "tailwindcss";
+
+:root {
+  --bg: #0d1320;
+  --bg-2: #111a2c;
+  --panel: #16203450;
+  --surface: #1a2740;
+  --surface-2: #22324f;
+  --border: #2c3e5e;
+  --text: #e8eefb;
+  --muted: #93a4c4;
+  --accent: #4ade80;
+  --accent-2: #22c55e;
+  --gold: #f5c518;
+  --danger: #f87171;
+
+  --fitness: #ef4444;
+  --career: #3b82f6;
+  --wellbeing: #22c55e;
+  --knowledge: #a855f7;
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-border: var(--border);
+  --color-accent: var(--accent);
+  --color-muted: var(--muted);
+  --font-mono: ui-monospace, "SFMono-Regular", "Menlo", "Consolas", monospace;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background-color: var(--bg);
+  background-image:
+    radial-gradient(circle at 1px 1px, #ffffff0a 1px, transparent 0),
+    linear-gradient(180deg, #0d1320 0%, #0b1019 100%);
+  background-size: 22px 22px, 100% 100%;
+  color: var(--text);
+  font-family:
+    ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+canvas {
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  display: block;
+}
+
+.pixel {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.card {
+  background: linear-gradient(180deg, var(--surface) 0%, #16223a 100%);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+}
+
+.panel {
+  background: rgba(13, 19, 32, 0.92);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  backdrop-filter: blur(6px);
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  padding: 0.55rem 0.95rem;
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 0.92rem;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text);
+  cursor: pointer;
+  transition:
+    transform 0.06s ease,
+    filter 0.15s ease,
+    background 0.15s ease;
+  user-select: none;
+}
+.btn:hover {
+  filter: brightness(1.1);
+}
+.btn:active {
+  transform: translateY(1px);
+}
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.btn-primary {
+  background: linear-gradient(180deg, var(--accent) 0%, var(--accent-2) 100%);
+  border-color: #16a34a;
+  color: #052e16;
+  box-shadow: 0 3px 0 #15803d;
+}
+.btn-primary:active {
+  box-shadow: 0 1px 0 #15803d;
+}
+.btn-ghost {
+  background: transparent;
+}
+.btn-danger {
+  background: #3b1d23;
+  border-color: #7f3a45;
+  color: var(--danger);
+}
+
+.input,
+.select,
+.textarea {
+  width: 100%;
+  padding: 0.6rem 0.7rem;
+  border-radius: 10px;
+  background: #0e1626;
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-size: 0.95rem;
+}
+.input:focus,
+.select:focus,
+.textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px #4ade8033;
+}
+.label {
+  display: block;
+  font-size: 0.8rem;
+  color: var(--muted);
+  margin-bottom: 0.3rem;
+}
+
+.xp-track {
+  height: 12px;
+  border-radius: 999px;
+  background: #0a1120;
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+.xp-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #38bdf8, #4ade80);
+  transition: width 0.4s ease;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.25rem 0.6rem;
+  border-radius: 999px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  font-size: 0.8rem;
+}
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(4, 8, 16, 0.72);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  z-index: 50;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 999px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+.toast {
+  animation: toast-in 0.18s ease-out;
+}
