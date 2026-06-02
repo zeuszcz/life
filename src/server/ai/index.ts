@@ -4,7 +4,7 @@ import { MockProvider } from "./mock";
 import { ClaudeProvider } from "./claude";
 import { OpenAIProvider } from "./openai";
 
-export type { AIProvider, RoadmapInput, RoadmapGoal } from "./types";
+export type { AIProvider, GoalContext, NextGoalContext } from "./types";
 
 /**
  * Resolve the configured AI provider. Falls back to the deterministic mock

@@ -12,9 +12,9 @@ export interface AchievementSeed {
 }
 
 export const ACHIEVEMENTS: AchievementSeed[] = [
-  { key: "first_step", title: "Первый шаг", description: "Выполни свой первый квест", icon: "🥇", conditionType: "first_quest", threshold: 1, domain: null },
-  { key: "disciplined", title: "Дисциплина", description: "Выполни 10 квестов", icon: "🔥", conditionType: "quests_completed", threshold: 10, domain: null },
-  { key: "machine", title: "Машина", description: "Выполни 50 квестов", icon: "⚙️", conditionType: "quests_completed", threshold: 50, domain: null },
+  { key: "first_step", title: "Первый шаг", description: "Выполни своё первое задание", icon: "🥇", conditionType: "first_quest", threshold: 1, domain: null },
+  { key: "disciplined", title: "Дисциплина", description: "Выполни 10 заданий", icon: "🔥", conditionType: "quests_completed", threshold: 10, domain: null },
+  { key: "machine", title: "Машина", description: "Выполни 50 заданий", icon: "⚙️", conditionType: "quests_completed", threshold: 50, domain: null },
   { key: "level_5", title: "Набираешь обороты", description: "Достигни 5 уровня", icon: "⭐", conditionType: "level", threshold: 5, domain: null },
   { key: "level_10", title: "Ветеран жизни", description: "Достигни 10 уровня", icon: "🏅", conditionType: "level", threshold: 10, domain: null },
   { key: "buff", title: "Качок", description: "Сила 5 уровня", icon: "💪", conditionType: "domain_level", threshold: 5, domain: "fitness" },

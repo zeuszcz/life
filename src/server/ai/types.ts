@@ -1,24 +1,38 @@
-import type { RoadmapResult } from "@/lib/zod-schemas";
 import type { Domain } from "@/lib/game/constants";
 
-export interface RoadmapGoal {
+export interface GoalContext {
   domain: Domain;
   title: string;
   description: string;
   motivation: string;
   currentState: string;
   hoursPerWeek: number;
-  targetDate?: string | null;
 }
 
-export interface RoadmapInput {
+export interface GoalTasksResult {
+  tasks: string[];
+}
+
+export interface NextGoalContext {
   characterName: string;
-  goals: RoadmapGoal[];
+  domain: Domain;
+  completedGoalTitle: string;
 }
 
-/** A pluggable roadmap generator. Implemented by Claude, OpenAI and a mock. */
+export interface NextGoalResult {
+  domain: Domain;
+  title: string;
+  motivation: string;
+  tasks: string[];
+}
+
+/**
+ * Pluggable AI mentor. It is invoked ONLY when a goal is added
+ * (generateGoalTasks) or completed (suggestNextGoal) — never on every checkbox.
+ */
 export interface AIProvider {
   readonly name: string;
   readonly model: string;
-  generateRoadmap(input: RoadmapInput): Promise<RoadmapResult>;
+  generateGoalTasks(goal: GoalContext): Promise<GoalTasksResult>;
+  suggestNextGoal(ctx: NextGoalContext): Promise<NextGoalResult>;
 }

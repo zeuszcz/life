@@ -21,7 +21,7 @@ import {
   type AvatarConfig,
 } from "@/lib/game/avatar";
 import { createCharacter } from "@/server/actions/character";
-import { submitGoalsAndGenerate } from "@/server/actions/goals";
+import { createGoalsBatch } from "@/server/actions/goals";
 
 type Step = "character" | "goals" | "generating";
 
@@ -97,7 +97,7 @@ export default function OnboardingClient({
       targetDate: g.targetDate || undefined,
     }));
     setStep("generating");
-    const res = await submitGoalsAndGenerate(payload);
+    const res = await createGoalsBatch(payload);
     if (res.error) {
       setError(res.error);
       setStep("goals");

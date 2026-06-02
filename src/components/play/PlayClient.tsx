@@ -11,7 +11,7 @@ import { getRoom, saveRoom } from "@/server/actions/rooms";
 import Hud from "./Hud";
 import Toasts from "./Toasts";
 import LocationPanel from "./LocationPanel";
-import RoadmapModal from "./RoadmapModal";
+import GoalsModal from "./GoalsModal";
 import ShopModal from "./ShopModal";
 import LogRealModal from "./LogRealModal";
 import DecorateBar from "./DecorateBar";
@@ -25,7 +25,7 @@ const GameCanvas = dynamic(() => import("@/components/GameCanvas"), {
   ),
 });
 
-type Modal = "roadmap" | "shop" | "log" | null;
+type Modal = "goals" | "shop" | "log" | null;
 
 export default function PlayClient({
   initialPlay,
@@ -118,7 +118,7 @@ export default function PlayClient({
       {!editMode && (
         <Hud
           appearance={appearance}
-          onOpenRoadmap={() => setModal("roadmap")}
+          onOpenGoals={() => setModal("goals")}
           onOpenShop={() => setModal("shop")}
           onOpenLog={() => setModal("log")}
         />
@@ -160,7 +160,7 @@ export default function PlayClient({
       )}
 
       {openLocation && <LocationPanel locationKey={openLocation} onClose={() => setOpen(null)} />}
-      {modal === "roadmap" && <RoadmapModal onClose={() => setModal(null)} />}
+      {modal === "goals" && <GoalsModal onClose={() => setModal(null)} />}
       {modal === "shop" && <ShopModal onClose={() => setModal(null)} />}
       {modal === "log" && <LogRealModal onClose={() => setModal(null)} />}
 

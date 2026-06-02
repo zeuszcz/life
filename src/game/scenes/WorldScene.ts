@@ -3,13 +3,14 @@ import { LOCATIONS, LOCATION_META, type LocationKey } from "@/lib/game/constants
 import { gameBus } from "@/lib/event-bus";
 import { frameFor, type Dir } from "@/lib/game/avatar";
 import { layerTextureKey } from "./BootScene";
+import { decorateOverworld } from "../overworld-props";
 
 const TILE = 32;
 export const MAP_W = 26;
 export const MAP_H = 20;
 const SPEED = 130;
 const AVATAR_SCALE = 0.72;
-const OVER_LAYERS = ["pants", "shoes", "shirt", "hair"] as const;
+const OVER_LAYERS = ["eyes", "pants", "shoes", "shirt", "hair"] as const;
 
 interface Door {
   key: LocationKey;
@@ -72,6 +73,9 @@ export class WorldScene extends Phaser.Scene {
       paths.fillRect(cx - TILE * 0.5, baseY - TILE, TILE, midY - baseY + TILE);
     }
 
+    // Street decorations (trees, bushes, flowers, lamps, benches, fountain).
+    const props = decorateOverworld(this, { midX, midY });
+
     // Player — layered LPC avatar. The body sprite carries the physics body;
     // pants/shirt/hair are follower sprites kept in sync each frame.
     // Spawn near the building we just exited, otherwise the map centre.
@@ -93,6 +97,7 @@ export class WorldScene extends Phaser.Scene {
     );
     this.setFrames(frameFor("down", false, 0));
     this.physics.add.collider(this.player, buildings);
+    this.physics.add.collider(this.player, props);
 
     this.cameras.main.setBounds(0, 0, worldW, worldH);
     this.cameras.main.startFollow(this.player, true, 0.12, 0.12);

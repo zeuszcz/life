@@ -14,5 +14,5 @@ export interface PlayState {
   xpForLevel: number;
   gold: number;
   stats: Record<Domain, DomainStat>;
-  questsCompleted: number;
+  tasksCompleted: number;
 }

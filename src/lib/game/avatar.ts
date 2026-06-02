@@ -46,13 +46,15 @@ export const DEFAULT_AVATAR: AvatarConfig = {
   shoes: "brown",
 };
 
-// Back-to-front draw order.
-export const LAYER_ORDER = ["body", "pants", "shoes", "shirt", "hair"] as const;
+// Back-to-front draw order. "eyes" is a fixed face layer (the ULPC base body
+// is faceless) drawn right on top of the body.
+export const LAYER_ORDER = ["body", "eyes", "pants", "shoes", "shirt", "hair"] as const;
 export type LayerKey = (typeof LAYER_ORDER)[number];
 
 export function layerUrls(a: AvatarConfig): Record<LayerKey, string> {
   return {
     body: `/assets/character/body/${a.skin}.png`,
+    eyes: `/assets/character/eyes/default.png`,
     pants: `/assets/character/pants/${a.pants}.png`,
     shoes: `/assets/character/shoes/${a.shoes}.png`,
     shirt: `/assets/character/shirt/${a.shirt}.png`,

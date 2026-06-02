@@ -1,12 +1,23 @@
 import Anthropic from "@anthropic-ai/sdk";
-import { RoadmapResultSchema, type RoadmapResult } from "@/lib/zod-schemas";
-import type { AIProvider, RoadmapInput } from "./types";
-import { SYSTEM_PROMPT, buildUserPrompt, ROADMAP_JSON_SCHEMA } from "./prompt";
+import { GoalTasksSchema, NextGoalSchema } from "@/lib/zod-schemas";
+import type {
+  AIProvider,
+  GoalContext,
+  GoalTasksResult,
+  NextGoalContext,
+  NextGoalResult,
+} from "./types";
+import {
+  TASKS_SYSTEM,
+  NEXT_GOAL_SYSTEM,
+  buildTasksPrompt,
+  buildNextGoalPrompt,
+  GOAL_TASKS_JSON_SCHEMA,
+  NEXT_GOAL_JSON_SCHEMA,
+} from "./prompt";
 
-const TOOL_NAME = "emit_roadmap";
-
-// Claude implementation. Uses forced tool use to guarantee structured JSON and
-// prompt caching on the (large, static) system prompt + tool schema.
+// Claude implementation. Forced tool use guarantees structured JSON; prompt
+// caching on the static system + tool schema.
 export class ClaudeProvider implements AIProvider {
   readonly name = "claude";
   readonly model: string;
@@ -17,34 +28,50 @@ export class ClaudeProvider implements AIProvider {
     this.model = model;
   }
 
-  async generateRoadmap(input: RoadmapInput): Promise<RoadmapResult> {
+  private async callTool(
+    system: string,
+    prompt: string,
+    toolName: string,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    schema: any,
+  ): Promise<unknown> {
     const msg = await this.client.messages.create({
       model: this.model,
-      max_tokens: 4096,
-      system: [
-        {
-          type: "text",
-          text: SYSTEM_PROMPT,
-          cache_control: { type: "ephemeral" },
-        },
-      ],
+      max_tokens: 1500,
+      system: [{ type: "text", text: system, cache_control: { type: "ephemeral" } }],
       tools: [
         {
-          name: TOOL_NAME,
-          description: "Сохранить сгенерированную роадмапу игрока.",
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          input_schema: ROADMAP_JSON_SCHEMA as any,
+          name: toolName,
+          description: "Сохранить результат для игры.",
+          input_schema: schema,
           cache_control: { type: "ephemeral" },
         },
       ],
-      tool_choice: { type: "tool", name: TOOL_NAME },
-      messages: [{ role: "user", content: buildUserPrompt(input) }],
+      tool_choice: { type: "tool", name: toolName },
+      messages: [{ role: "user", content: prompt }],
     });
+    const tu = msg.content.find((b) => b.type === "tool_use");
+    if (!tu || tu.type !== "tool_use") throw new Error("Claude did not return a tool_use block");
+    return tu.input;
+  }
 
-    const toolUse = msg.content.find((block) => block.type === "tool_use");
-    if (!toolUse || toolUse.type !== "tool_use") {
-      throw new Error("Claude did not return a tool_use block");
-    }
-    return RoadmapResultSchema.parse(toolUse.input);
+  async generateGoalTasks(goal: GoalContext): Promise<GoalTasksResult> {
+    const input = await this.callTool(
+      TASKS_SYSTEM,
+      buildTasksPrompt(goal),
+      "emit_tasks",
+      GOAL_TASKS_JSON_SCHEMA,
+    );
+    return GoalTasksSchema.parse(input);
+  }
+
+  async suggestNextGoal(ctx: NextGoalContext): Promise<NextGoalResult> {
+    const input = await this.callTool(
+      NEXT_GOAL_SYSTEM,
+      buildNextGoalPrompt(ctx),
+      "emit_next_goal",
+      NEXT_GOAL_JSON_SCHEMA,
+    );
+    return NextGoalSchema.parse(input);
   }
 }

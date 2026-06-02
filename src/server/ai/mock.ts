@@ -1,70 +1,44 @@
-import { DIFFICULTY_REWARDS, type Difficulty } from "@/lib/game/constants";
-import { RoadmapResultSchema, type RoadmapResult } from "@/lib/zod-schemas";
-import type { AIProvider, RoadmapInput } from "./types";
+import { GoalTasksSchema, NextGoalSchema } from "@/lib/zod-schemas";
+import { DOMAIN_META } from "@/lib/game/constants";
+import type {
+  AIProvider,
+  GoalContext,
+  GoalTasksResult,
+  NextGoalContext,
+  NextGoalResult,
+} from "./types";
 
-// Deterministic, offline roadmap generator. Lets the whole app run end-to-end
-// with no API keys. Output mirrors the shape real providers must return.
+// Deterministic, offline provider. Lets the whole loop run with no API keys.
 export class MockProvider implements AIProvider {
   readonly name = "mock";
-  readonly model = "mock-v1";
+  readonly model = "mock-v2";
 
-  async generateRoadmap(input: RoadmapInput): Promise<RoadmapResult> {
-    const milestones = input.goals.flatMap((goal) => {
-      const stages = [
-        { suffix: "— старт", weeks: 2, diff: "easy" as Difficulty },
-        { suffix: "— набор формы", weeks: 4, diff: "medium" as Difficulty },
-        { suffix: "— рывок", weeks: 6, diff: "hard" as Difficulty },
-      ];
-      return stages.map((stage, idx) => ({
-        domain: goal.domain,
-        title: `${goal.title} ${stage.suffix}`,
-        description:
-          idx === 0
-            ? `Заложи фундамент для цели «${goal.title}». Маленькие регулярные шаги.`
-            : `Продолжай двигаться к цели «${goal.title}». Повышай нагрузку.`,
-        targetWeeks: stage.weeks,
-        xpReward: 80 + idx * 60,
-        quests: buildQuests(goal.title, stage.diff, goal.hoursPerWeek),
-      }));
+  async generateGoalTasks(goal: GoalContext): Promise<GoalTasksResult> {
+    const t = goal.title.trim();
+    const weekly = Math.max(2, Math.min(6, Math.round(goal.hoursPerWeek / 2)));
+    return GoalTasksSchema.parse({
+      tasks: [
+        `Разобраться, с чего начать: «${t}» (20-30 минут)`,
+        `Сделать первый маленький шаг к «${t}»`,
+        `Заниматься «${t}» ${weekly} раз(а) на этой неделе`,
+        `Найти пример или полезный ресурс по теме «${t}»`,
+        `Подвести итоги недели по «${t}» и наметить следующий шаг`,
+      ],
     });
-
-    const result: RoadmapResult = {
-      summary:
-        `${input.characterName}, твой путь разбит на этапы. Выполняй квесты в локациях, ` +
-        `качай статы и двигайся к целям — шаг за шагом. Удачи!`,
-      milestones,
-    };
-    return RoadmapResultSchema.parse(result);
   }
-}
 
-function buildQuests(goalTitle: string, difficulty: Difficulty, hoursPerWeek: number) {
-  const reward = DIFFICULTY_REWARDS[difficulty];
-  const weeklyTarget = Math.max(2, Math.min(6, Math.round(hoursPerWeek / 2)));
-  return [
-    {
-      title: `Сделать первый шаг к «${goalTitle}»`,
-      description: "Разовое действие, чтобы сдвинуться с места.",
-      type: "oneoff" as const,
-      difficulty,
-      xpReward: reward.xp,
-      goldReward: reward.gold,
-    },
-    {
-      title: `Ежедневная привычка ради «${goalTitle}»`,
-      description: "Небольшое действие каждый день. Главное — регулярность.",
-      type: "daily" as const,
-      difficulty: "easy" as Difficulty,
-      xpReward: DIFFICULTY_REWARDS.easy.xp,
-      goldReward: DIFFICULTY_REWARDS.easy.gold,
-    },
-    {
-      title: `Недельный челлендж: ${weeklyTarget} подхода`,
-      description: `Сделай ${weeklyTarget} целевых действий за неделю.`,
-      type: "weekly" as const,
-      difficulty: "medium" as Difficulty,
-      xpReward: DIFFICULTY_REWARDS.medium.xp,
-      goldReward: DIFFICULTY_REWARDS.medium.gold,
-    },
-  ];
+  async suggestNextGoal(ctx: NextGoalContext): Promise<NextGoalResult> {
+    const label = DOMAIN_META[ctx.domain].label;
+    return NextGoalSchema.parse({
+      domain: ctx.domain,
+      title: `Новый уровень в сфере «${label}»`,
+      motivation: `Ты завершил «${ctx.completedGoalTitle}» — пора поднять планку.`,
+      tasks: [
+        `Поставить более амбициозную версию прошлой цели`,
+        `Составить план на 2 недели`,
+        `Делать ключевое действие 3 раза в неделю`,
+        `Отметить прогресс в конце недели`,
+      ],
+    });
+  }
 }

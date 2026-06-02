@@ -1,87 +1,72 @@
-import { DOMAINS, QUEST_TYPES, DIFFICULTIES, DOMAIN_META } from "@/lib/game/constants";
-import type { RoadmapInput } from "./types";
+import { DOMAINS, DOMAIN_META } from "@/lib/game/constants";
+import type { GoalContext, NextGoalContext } from "./types";
 
-export const SYSTEM_PROMPT = `Ты — внутриигровой ИИ-наставник в игре про саморазвитие "Life".
-Игрок описывает реальные жизненные цели, а ты превращаешь их в игровую роадмапу:
-цепочки этапов (milestones) и конкретных заданий (quests), как в RPG.
+const DOMAIN_LINES = DOMAINS.map(
+  (d) => `- ${d} — ${DOMAIN_META[d].label} (${DOMAIN_META[d].icon})`,
+).join("\n");
 
-Мир игры состоит из 4 доменов, каждый привязан к локации:
-${DOMAINS.map((d) => `- ${d} — ${DOMAIN_META[d].label} (${DOMAIN_META[d].icon}), стат "${DOMAIN_META[d].statName}"`).join("\n")}
+export const TASKS_SYSTEM = `Ты — внутриигровой ИИ-наставник в игре про саморазвитие "Life".
+Игрок ставит реальную жизненную цель. Разбей ОДНУ цель на 4-7 КОНКРЕТНЫХ,
+выполнимых мини-заданий — коротких шагов, которые реально приближают к цели.
 
 Правила:
-- Каждый milestone относится ровно к одному домену из списка: ${DOMAINS.join(", ")}.
-- Этапы идут по нарастанию сложности и логически ведут к цели.
-- Квесты — это КОНКРЕТНЫЕ, выполнимые действия (не абстракции). Хорошо: "Сделать 3 тренировки на этой неделе". Плохо: "Стать сильнее".
-- Тип квеста: ${QUEST_TYPES.join(" | ")} (daily/weekly — для регулярных привычек, oneoff — разовые шаги).
-- Сложность: ${DIFFICULTIES.join(" | ")}. Награды (xpReward/goldReward) масштабируй по сложности.
-- Учитывай, сколько часов в неделю игрок готов вкладывать — не перегружай план.
-- Будь мотивирующим, но реалистичным. Без медицинских/финансовых категоричных обещаний.
-- Весь текст (summary, заголовки, описания) — на русском языке.
-- Верни ТОЛЬКО структуру по заданной схеме, без лишнего текста.`;
+- Каждое задание — отдельная короткая строка (действие), напр.: "Сделать 3 тренировки на этой неделе".
+- Плохо: абстракции вроде "стать лучше". Хорошо: измеримые шаги.
+- Двигайся по нарастанию: от простого старта к более сложному.
+- Учитывай, сколько времени в неделю готов вкладывать игрок.
+- Всё на русском. Верни только список заданий по схеме, без лишнего текста.`;
 
-export function buildUserPrompt(input: RoadmapInput): string {
-  const lines: string[] = [];
-  lines.push(`Персонаж: ${input.characterName}.`);
-  lines.push(`Цели игрока (${input.goals.length}):`);
-  input.goals.forEach((g, i) => {
-    lines.push(`\n${i + 1}. [${g.domain}] ${g.title}`);
-    if (g.description) lines.push(`   Подробности: ${g.description}`);
-    if (g.motivation) lines.push(`   Зачем: ${g.motivation}`);
-    if (g.currentState) lines.push(`   Сейчас: ${g.currentState}`);
-    lines.push(`   Времени в неделю: ~${g.hoursPerWeek} ч.`);
-    if (g.targetDate) lines.push(`   Целевая дата: ${g.targetDate}`);
-  });
-  lines.push(
-    `\nСоставь роадмапу: на каждую цель 2-4 этапа, в каждом этапе 2-5 квестов. ` +
-      `Сбалансируй разовые и регулярные задания. Дай короткое мотивирующее summary.`,
-  );
+export const NEXT_GOAL_SYSTEM = `Ты — внутриигровой ИИ-наставник в игре про саморазвитие "Life".
+Игрок только что ЗАВЕРШИЛ цель. Предложи следующую логичную цель, развивающую
+успех, и разбей её на 4-6 конкретных мини-заданий.
+
+Домены (выбери один):
+${DOMAIN_LINES}
+
+Всё на русском. Верни только структуру по схеме.`;
+
+export function buildTasksPrompt(goal: GoalContext): string {
+  const lines = [
+    `Домен: ${goal.domain} (${DOMAIN_META[goal.domain].label}).`,
+    `Цель: ${goal.title}.`,
+  ];
+  if (goal.currentState) lines.push(`Сейчас: ${goal.currentState}`);
+  if (goal.motivation) lines.push(`Зачем: ${goal.motivation}`);
+  if (goal.description) lines.push(`Детали: ${goal.description}`);
+  lines.push(`Времени в неделю: ~${goal.hoursPerWeek} ч.`);
+  lines.push(`Разбей эту цель на 4-7 мини-заданий.`);
   return lines.join("\n");
 }
 
-/**
- * JSON schema shared by the Claude tool definition and OpenAI structured
- * outputs. Every object lists all keys in `required` with
- * `additionalProperties:false` so it satisfies OpenAI strict mode.
- */
-export const ROADMAP_JSON_SCHEMA = {
+export function buildNextGoalPrompt(ctx: NextGoalContext): string {
+  return [
+    `Персонаж: ${ctx.characterName}.`,
+    `Только что завершена цель: "${ctx.completedGoalTitle}" (домен ${ctx.domain}).`,
+    `Предложи следующую цель (домен, название, короткая мотивация) и 4-6 мини-заданий.`,
+  ].join("\n");
+}
+
+export const GOAL_TASKS_JSON_SCHEMA = {
   type: "object",
   additionalProperties: false,
   properties: {
-    summary: {
-      type: "string",
-      description: "Короткое мотивирующее описание пути игрока (2-4 предложения).",
-    },
-    milestones: {
+    tasks: {
       type: "array",
-      items: {
-        type: "object",
-        additionalProperties: false,
-        properties: {
-          domain: { type: "string", enum: [...DOMAINS] },
-          title: { type: "string" },
-          description: { type: "string" },
-          targetWeeks: { type: "integer" },
-          xpReward: { type: "integer" },
-          quests: {
-            type: "array",
-            items: {
-              type: "object",
-              additionalProperties: false,
-              properties: {
-                title: { type: "string" },
-                description: { type: "string" },
-                type: { type: "string", enum: [...QUEST_TYPES] },
-                difficulty: { type: "string", enum: [...DIFFICULTIES] },
-                xpReward: { type: "integer" },
-                goldReward: { type: "integer" },
-              },
-              required: ["title", "description", "type", "difficulty", "xpReward", "goldReward"],
-            },
-          },
-        },
-        required: ["domain", "title", "description", "targetWeeks", "xpReward", "quests"],
-      },
+      description: "4-7 конкретных мини-заданий (короткие строки-действия).",
+      items: { type: "string" },
     },
   },
-  required: ["summary", "milestones"],
+  required: ["tasks"],
+};
+
+export const NEXT_GOAL_JSON_SCHEMA = {
+  type: "object",
+  additionalProperties: false,
+  properties: {
+    domain: { type: "string", enum: [...DOMAINS] },
+    title: { type: "string" },
+    motivation: { type: "string" },
+    tasks: { type: "array", items: { type: "string" } },
+  },
+  required: ["domain", "title", "motivation", "tasks"],
 };

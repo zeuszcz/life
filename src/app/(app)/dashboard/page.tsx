@@ -10,7 +10,8 @@ import { AppearanceSchema } from "@/lib/zod-schemas";
 import AvatarPreview from "@/components/AvatarPreview";
 
 const ACTIVITY_LABEL: Record<string, string> = {
-  quest_complete: "Квест выполнен",
+  task_complete: "Задание выполнено",
+  goal_complete: "Цель достигнута",
   level_up: "Новый уровень",
   achievement: "Достижение",
   purchase: "Покупка в игре",
@@ -29,13 +30,14 @@ export default async function DashboardPage() {
   });
   if (!character) redirect("/onboarding");
 
-  const [stats, defs, unlocked, activity, questsCompleted, roadmap] = await Promise.all([
+  const [stats, defs, unlocked, activity, tasksCompleted, goalsActive, goalsDone] = await Promise.all([
     getOrCreateStats(character.id),
     prisma.achievementDef.findMany({ orderBy: { threshold: "asc" } }),
     prisma.userAchievement.findMany({ where: { userId } }),
     prisma.activityLog.findMany({ where: { userId }, orderBy: { createdAt: "desc" }, take: 20 }),
-    prisma.activityLog.count({ where: { userId, type: "quest_complete" } }),
-    prisma.roadmap.findFirst({ where: { userId }, orderBy: { createdAt: "desc" } }),
+    prisma.activityLog.count({ where: { userId, type: "task_complete" } }),
+    prisma.goal.count({ where: { userId, status: "active" } }),
+    prisma.goal.count({ where: { userId, status: "done" } }),
   ]);
 
   const p = progress(character.xp);
@@ -66,8 +68,8 @@ export default async function DashboardPage() {
             <span className="text-xs text-[var(--muted)]">{p.current}/{p.needed} XP</span>
           </div>
           <div className="mt-2 text-sm text-[var(--muted)]">
-            Выполнено квестов: <b className="text-white">{questsCompleted}</b>
-            {roadmap && <> · цель пути: {roadmap.summary ? roadmap.summary.slice(0, 80) + "…" : "—"}</>}
+            Выполнено заданий: <b className="text-white">{tasksCompleted}</b> · цели:{" "}
+            <b className="text-white">{goalsActive}</b> активных, <b className="text-white">{goalsDone}</b> завершено
           </div>
         </div>
       </section>

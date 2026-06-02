@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { DOMAINS, QUEST_TYPES, DIFFICULTIES } from "@/lib/game/constants";
+import { DOMAINS } from "@/lib/game/constants";
 import { SKINS, HAIR_STYLES, HAIR_COLORS, SHIRTS, PANTS, SHOES } from "@/lib/game/avatar";
 
 // ---------------------------------------------------------------------------
@@ -58,31 +58,20 @@ export const GoalsSubmitSchema = z.object({
 export type GoalsSubmitInput = z.infer<typeof GoalsSubmitSchema>;
 
 // ---------------------------------------------------------------------------
-// AI roadmap output (validated after the model responds)
+// AI output (validated after the model responds)
 // ---------------------------------------------------------------------------
-export const AIQuestSchema = z.object({
-  title: z.string().min(2).max(140),
-  description: z.string().max(500).default(""),
-  type: z.enum(QUEST_TYPES).default("oneoff"),
-  difficulty: z.enum(DIFFICULTIES).default("medium"),
-  xpReward: z.coerce.number().int().min(1).max(500).default(20),
-  goldReward: z.coerce.number().int().min(0).max(200).default(5),
+export const GoalTasksSchema = z.object({
+  tasks: z.array(z.string().trim().min(2).max(160)).min(1).max(12),
 });
+export type GoalTasksResult = z.infer<typeof GoalTasksSchema>;
 
-export const AIMilestoneSchema = z.object({
+export const NextGoalSchema = z.object({
   domain: z.enum(DOMAINS),
-  title: z.string().min(2).max(140),
-  description: z.string().max(800).default(""),
-  targetWeeks: z.coerce.number().int().min(1).max(104).default(4),
-  xpReward: z.coerce.number().int().min(1).max(2000).default(100),
-  quests: z.array(AIQuestSchema).min(1).max(8),
+  title: z.string().trim().min(3).max(140),
+  motivation: z.string().trim().max(500).default(""),
+  tasks: z.array(z.string().trim().min(2).max(160)).min(1).max(12),
 });
-
-export const RoadmapResultSchema = z.object({
-  summary: z.string().max(1500).default(""),
-  milestones: z.array(AIMilestoneSchema).min(1).max(24),
-});
-export type RoadmapResult = z.infer<typeof RoadmapResultSchema>;
+export type NextGoalResult = z.infer<typeof NextGoalSchema>;
 
 // ---------------------------------------------------------------------------
 // Shop / real-life logging

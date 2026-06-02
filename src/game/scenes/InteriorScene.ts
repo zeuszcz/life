@@ -16,7 +16,7 @@ import { generateFurnitureTextures, furnitureTextureKey } from "../furniture-spr
 
 const SPEED = 120;
 const AVATAR_SCALE = 0.72;
-const OVER_LAYERS = ["pants", "shoes", "shirt", "hair"] as const;
+const OVER_LAYERS = ["eyes", "pants", "shoes", "shirt", "hair"] as const;
 const DOOR_W = 76;
 
 interface PlacedItem {

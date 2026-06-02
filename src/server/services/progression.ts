@@ -21,7 +21,7 @@ export async function getOrCreateStats(characterId: string): Promise<Stat[]> {
 export function buildPlayState(
   character: Character,
   stats: Stat[],
-  questsCompleted: number,
+  tasksCompleted: number,
 ): PlayState {
   const p = progress(character.xp);
   const statMap = {} as PlayState["stats"];
@@ -37,18 +37,18 @@ export function buildPlayState(
     xpForLevel: p.needed,
     gold: character.gold,
     stats: statMap,
-    questsCompleted,
+    tasksCompleted,
   };
 }
 
 export async function getPlayState(userId: string): Promise<PlayState | null> {
   const character = await prisma.character.findUnique({ where: { userId } });
   if (!character) return null;
-  const [stats, questsCompleted] = await Promise.all([
+  const [stats, tasksCompleted] = await Promise.all([
     getOrCreateStats(character.id),
-    prisma.activityLog.count({ where: { userId, type: "quest_complete" } }),
+    prisma.activityLog.count({ where: { userId, type: "task_complete" } }),
   ]);
-  return buildPlayState(character, stats, questsCompleted);
+  return buildPlayState(character, stats, tasksCompleted);
 }
 
 export interface RewardResult {
@@ -109,10 +109,10 @@ export async function evaluateAchievements(userId: string): Promise<UnlockedAchi
   const defs = await prisma.achievementDef.findMany();
   if (defs.length === 0) return [];
 
-  const [character, unlocked, questsCompleted] = await Promise.all([
+  const [character, unlocked, tasksCompleted] = await Promise.all([
     prisma.character.findUnique({ where: { userId }, include: { stats: true } }),
     prisma.userAchievement.findMany({ where: { userId }, select: { key: true } }),
-    prisma.activityLog.count({ where: { userId, type: "quest_complete" } }),
+    prisma.activityLog.count({ where: { userId, type: "task_complete" } }),
   ]);
   if (!character) return [];
 
@@ -124,10 +124,10 @@ export async function evaluateAchievements(userId: string): Promise<UnlockedAchi
     let ok = false;
     switch (def.conditionType) {
       case "first_quest":
-        ok = questsCompleted >= 1;
+        ok = tasksCompleted >= 1;
         break;
       case "quests_completed":
-        ok = questsCompleted >= def.threshold;
+        ok = tasksCompleted >= def.threshold;
         break;
       case "level":
         ok = character.level >= def.threshold;
