@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { DOMAINS, QUEST_TYPES, DIFFICULTIES } from "@/lib/game/constants";
-import { SKINS, HAIR_STYLES, HAIR_COLORS, SHIRTS, PANTS } from "@/lib/game/avatar";
+import { SKINS, HAIR_STYLES, HAIR_COLORS, SHIRTS, PANTS, SHOES } from "@/lib/game/avatar";
 
 // ---------------------------------------------------------------------------
 // Auth
@@ -25,9 +25,10 @@ export const LoginSchema = z.object({
 export const AppearanceSchema = z.object({
   skin: z.enum(SKINS).default("light").catch("light"),
   hairStyle: z.enum(HAIR_STYLES).default("plain").catch("plain"),
-  hairColor: z.enum(HAIR_COLORS).default("brown").catch("brown"),
-  shirt: z.enum(SHIRTS).default("white").catch("white"),
-  pants: z.enum(PANTS).default("teal").catch("teal"),
+  hairColor: z.enum(HAIR_COLORS).default("dark_brown").catch("dark_brown"),
+  shirt: z.enum(SHIRTS).default("blue").catch("blue"),
+  pants: z.enum(PANTS).default("navy").catch("navy"),
+  shoes: z.enum(SHOES).default("brown").catch("brown"),
 });
 export type Appearance = z.infer<typeof AppearanceSchema>;
 

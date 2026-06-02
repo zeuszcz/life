@@ -9,7 +9,7 @@ export const MAP_W = 26;
 export const MAP_H = 20;
 const SPEED = 130;
 const AVATAR_SCALE = 0.72;
-const OVER_LAYERS = ["pants", "shirt", "hair"] as const;
+const OVER_LAYERS = ["pants", "shoes", "shirt", "hair"] as const;
 
 interface Door {
   key: LocationKey;
@@ -31,9 +31,14 @@ export class WorldScene extends Phaser.Scene {
   private inputEnabled = true;
   private facing: Dir = "down";
   private animTime = 0;
+  private spawnFrom?: LocationKey;
 
   constructor() {
     super("World");
+  }
+
+  init(data: { from?: LocationKey }) {
+    this.spawnFrom = data?.from;
   }
 
   create() {
@@ -69,8 +74,14 @@ export class WorldScene extends Phaser.Scene {
 
     // Player — layered LPC avatar. The body sprite carries the physics body;
     // pants/shirt/hair are follower sprites kept in sync each frame.
-    const startX = midX + TILE;
-    const startY = midY + TILE;
+    // Spawn near the building we just exited, otherwise the map centre.
+    let startX = midX + TILE;
+    let startY = midY + TILE;
+    if (this.spawnFrom) {
+      const m = LOCATION_META[this.spawnFrom];
+      startX = m.tile.x * TILE;
+      startY = m.tile.y * TILE + TILE * 1.4;
+    }
     this.player = this.physics.add.sprite(startX, startY, layerTextureKey("body"));
     this.player.setScale(AVATAR_SCALE).setOrigin(0.5, 0.5);
     const body = this.player.body as Phaser.Physics.Arcade.Body;
@@ -209,7 +220,10 @@ export class WorldScene extends Phaser.Scene {
       if (newNear) gameBus.emit("near-location", { key: newNear });
     }
     if (this.near && Phaser.Input.Keyboard.JustDown(this.eKey)) {
-      gameBus.emit("open-location", { key: this.near });
+      const key = this.near;
+      gameBus.emit("leave-location", { key });
+      this.near = null;
+      this.scene.start("Interior", { key });
     }
   }
 }

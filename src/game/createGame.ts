@@ -1,6 +1,7 @@
 import Phaser from "phaser";
 import { BootScene } from "./scenes/BootScene";
 import { WorldScene } from "./scenes/WorldScene";
+import { InteriorScene } from "./scenes/InteriorScene";
 import type { Appearance } from "@/lib/zod-schemas";
 
 // Builds the Phaser game instance. Imported dynamically (client-only) so Phaser
@@ -20,6 +21,6 @@ export function createGame(parent: HTMLElement, appearance: Appearance): Phaser.
     },
     physics: { default: "arcade", arcade: { debug: false } },
     callbacks: { preBoot: (game) => game.registry.set("appearance", appearance) },
-    scene: [BootScene, WorldScene],
+    scene: [BootScene, WorldScene, InteriorScene],
   });
 }

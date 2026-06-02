@@ -11,6 +11,7 @@ import {
   HAIR_COLORS,
   SHIRTS,
   PANTS,
+  SHOES,
   SKIN_HEX,
   HAIR_HEX,
   CLOTH_HEX,
@@ -136,6 +137,7 @@ export default function OnboardingClient({
               <ColorRow label="Цвет волос" value={appearance.hairColor} options={HAIR_COLORS} hexFor={(c) => HAIR_HEX[c]} onPick={(v) => setAp("hairColor", v)} />
               <ColorRow label="Рубашка" value={appearance.shirt} options={SHIRTS} hexFor={(c) => CLOTH_HEX[c]} onPick={(v) => setAp("shirt", v)} />
               <ColorRow label="Штаны" value={appearance.pants} options={PANTS} hexFor={(c) => CLOTH_HEX[c]} onPick={(v) => setAp("pants", v)} />
+              <ColorRow label="Обувь" value={appearance.shoes} options={SHOES} hexFor={(c) => CLOTH_HEX[c]} onPick={(v) => setAp("shoes", v)} />
             </div>
           </div>
 

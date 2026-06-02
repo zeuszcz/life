@@ -1,19 +1,37 @@
 import mitt, { type Emitter } from "mitt";
 import type { LocationKey } from "@/lib/game/constants";
 
-// Typed event bus bridging the Phaser world and the React UI. The Phaser scene
-// emits world events; React listens and opens panels, and vice versa.
+export interface RoomItemDTO {
+  itemKey: string;
+  x: number;
+  y: number;
+}
+
+// Typed event bus bridging the Phaser world and the React UI.
 export type GameEvents = {
-  /** Player walked into a building's trigger zone. */
+  // Overworld
   "near-location": { key: LocationKey };
-  /** Player left the trigger zone. */
   "leave-location": { key: LocationKey };
-  /** Player pressed the interact key while near a building. */
-  "open-location": { key: LocationKey };
-  /** Phaser finished booting the world. */
   "game-ready": void;
-  /** React asks Phaser to (un)pause input (e.g. while a modal is open). */
   "set-input-enabled": { enabled: boolean };
+
+  // Quests
+  "open-location": { key: LocationKey };
+
+  // Interiors
+  "enter-interior": { key: LocationKey };
+  "exit-interior": void;
+  "interior-hint": { text: string | null };
+
+  // Interior editor (React -> Phaser)
+  "set-edit-mode": { enabled: boolean };
+  "place-item": { itemKey: string };
+  "remove-selected": void;
+  "save-room": void;
+  // React -> Phaser: render saved furniture for a room
+  "load-room": { key: LocationKey; items: RoomItemDTO[] };
+  // Phaser -> React: current furniture layout to persist
+  "room-layout": { key: LocationKey; items: RoomItemDTO[] };
 };
 
 export const gameBus: Emitter<GameEvents> = mitt<GameEvents>();

@@ -23,6 +23,7 @@ model User {
   roadmaps     Roadmap[]
   achievements UserAchievement[]
   activity     ActivityLog[]
+  roomItems    RoomItem[]
 }
 
 model Character {
@@ -150,4 +151,18 @@ model ActivityLog {
   type      String // quest_complete | level_up | achievement | purchase | real_achievement | real_purchase
   payload   Json
   createdAt DateTime @default(now())
+}
+
+// User-placed furniture inside a location's interior.
+model RoomItem {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  locationKey String // home | gym | work | study
+  itemKey     String
+  x           Int
+  y           Int
+  createdAt   DateTime @default(now())
+
+  @@index([userId, locationKey])
 }

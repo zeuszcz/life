@@ -1,28 +1,32 @@
-// Modular pixel-art avatar built from Universal LPC Spritesheet layers
-// (see public/assets/character/CREDITS.md). Each layer is a 64×64-frame sheet,
-// 13 columns × 21 rows; walk-cycle rows are up=8, left=9, down=10, right=11
-// (column 0 = idle/standing, columns 1–8 = the 8-frame walk cycle).
+// Modular pixel-art avatar from the Universal LPC Spritesheet (ULPC, via the
+// sanderfrenken generator; CC-BY-SA 3.0 / GPL 3.0 — see CREDITS.md).
 //
-// Shared by Phaser (BootScene/WorldScene) and the React character creator, so
-// it must stay free of Node/browser-only dependencies.
+// Each layer PNG was cropped to JUST the 4-direction walk block (rows 8–11 of
+// the universal sheet), i.e. 832×256 = 13 columns × 4 rows of 64px frames.
+// After the crop the walk rows are 0=up, 1=left, 2=down, 3=right (column 0 =
+// idle/standing, columns 1–8 = the 8-frame walk cycle).
+//
+// Shared by Phaser and the React creator — no Node/browser-only deps.
 
 export const FRAME = 64;
 export const COLS = 13;
 
-export const WALK_ROWS = { up: 8, left: 9, down: 10, right: 11 } as const;
+export const WALK_ROWS = { up: 0, left: 1, down: 2, right: 3 } as const;
 export type Dir = keyof typeof WALK_ROWS;
 
-export const SKINS = ["light", "tanned", "tanned2", "dark", "dark2"] as const;
-export const HAIR_STYLES = ["plain", "bedhead", "long", "messy1", "ponytail", "mohawk"] as const;
-export const HAIR_COLORS = ["black", "brown", "blonde", "redhead", "gray", "white"] as const;
-export const SHIRTS = ["white", "teal", "maroon", "brown"] as const;
-export const PANTS = ["teal", "white", "red", "magenta"] as const;
+export const SKINS = ["light", "amber", "olive", "bronze", "brown", "taupe", "black"] as const;
+export const HAIR_STYLES = ["plain", "bangs", "long", "ponytail", "page", "parted", "curtains", "afro"] as const;
+export const HAIR_COLORS = ["black", "dark_brown", "blonde", "ginger", "gray", "white"] as const;
+export const SHIRTS = ["white", "black", "navy", "blue", "red", "forest", "teal", "charcoal", "maroon", "gray"] as const;
+export const PANTS = ["black", "navy", "charcoal", "gray", "brown", "walnut", "forest", "teal"] as const;
+export const SHOES = ["black", "brown", "gray", "white", "leather", "navy"] as const;
 
 export type Skin = (typeof SKINS)[number];
 export type HairStyle = (typeof HAIR_STYLES)[number];
 export type HairColor = (typeof HAIR_COLORS)[number];
 export type Shirt = (typeof SHIRTS)[number];
 export type Pants = (typeof PANTS)[number];
+export type Shoes = (typeof SHOES)[number];
 
 export interface AvatarConfig {
   skin: Skin;
@@ -30,24 +34,27 @@ export interface AvatarConfig {
   hairColor: HairColor;
   shirt: Shirt;
   pants: Pants;
+  shoes: Shoes;
 }
 
 export const DEFAULT_AVATAR: AvatarConfig = {
   skin: "light",
   hairStyle: "plain",
-  hairColor: "brown",
-  shirt: "white",
-  pants: "teal",
+  hairColor: "dark_brown",
+  shirt: "blue",
+  pants: "navy",
+  shoes: "brown",
 };
 
 // Back-to-front draw order.
-export const LAYER_ORDER = ["body", "pants", "shirt", "hair"] as const;
+export const LAYER_ORDER = ["body", "pants", "shoes", "shirt", "hair"] as const;
 export type LayerKey = (typeof LAYER_ORDER)[number];
 
 export function layerUrls(a: AvatarConfig): Record<LayerKey, string> {
   return {
     body: `/assets/character/body/${a.skin}.png`,
     pants: `/assets/character/pants/${a.pants}.png`,
+    shoes: `/assets/character/shoes/${a.shoes}.png`,
     shirt: `/assets/character/shirt/${a.shirt}.png`,
     hair: `/assets/character/hair/${a.hairStyle}_${a.hairColor}.png`,
   };
@@ -67,43 +74,57 @@ export function idleBgPosition(dir: Dir): { x: number; y: number } {
 // ---- UI helpers (labels + swatch colors) -------------------------------------
 export const SKIN_HEX: Record<Skin, string> = {
   light: "#f2c9a0",
-  tanned: "#d6a06a",
-  tanned2: "#c0824a",
-  dark: "#8d5a3b",
-  dark2: "#5b3a28",
+  amber: "#e0a878",
+  olive: "#c79a5e",
+  bronze: "#b87a4b",
+  brown: "#8d5a3b",
+  taupe: "#6e4e3a",
+  black: "#4a3328",
 };
 
 export const HAIR_HEX: Record<HairColor, string> = {
   black: "#2b2b2b",
-  brown: "#6b4a2b",
+  dark_brown: "#4a2f1a",
   blonde: "#e6c66b",
-  redhead: "#b5453b",
+  ginger: "#b5543b",
   gray: "#9aa0a6",
   white: "#ededed",
 };
 
+// Shared clothing palette (shirts / pants / shoes).
 export const CLOTH_HEX: Record<string, string> = {
   white: "#e8e8e8",
-  teal: "#2bb3a3",
-  maroon: "#7d2b3a",
-  brown: "#6b4a2b",
+  black: "#2b2b2b",
+  navy: "#243b6b",
+  blue: "#3b82f6",
   red: "#c0392b",
-  magenta: "#c026d3",
+  forest: "#2f6b3d",
+  teal: "#2bb3a3",
+  charcoal: "#36404a",
+  maroon: "#7d2b3a",
+  gray: "#9aa0a6",
+  brown: "#6b4a2b",
+  walnut: "#5b4326",
+  leather: "#8a5a2b",
 };
 
 export const HAIR_STYLE_LABEL: Record<HairStyle, string> = {
   plain: "Обычные",
-  bedhead: "Взъерошенные",
+  bangs: "Чёлка",
   long: "Длинные",
-  messy1: "Небрежные",
   ponytail: "Хвост",
-  mohawk: "Ирокез",
+  page: "Каре",
+  parted: "На пробор",
+  curtains: "Шторки",
+  afro: "Афро",
 };
 
 export const SKIN_LABEL: Record<Skin, string> = {
   light: "Светлый",
-  tanned: "Загар",
-  tanned2: "Бронза",
-  dark: "Смуглый",
-  dark2: "Тёмный",
+  amber: "Янтарный",
+  olive: "Оливковый",
+  bronze: "Бронза",
+  brown: "Коричневый",
+  taupe: "Тёмный загар",
+  black: "Тёмный",
 };
