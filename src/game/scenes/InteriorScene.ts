@@ -103,7 +103,10 @@ export class InteriorScene extends Phaser.Scene {
     this.cursors = this.input.keyboard!.createCursorKeys();
     this.wasd = this.input.keyboard!.addKeys("W,A,S,D") as Record<string, Phaser.Input.Keyboard.Key>;
     this.eKey = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.E);
-    this.input.keyboard!.enableGlobalCapture();
+    // Never capture keys → Phaser never preventDefault()s them, so typing in
+    // HTML inputs over the canvas (Space, WASD / фцыв, etc.) always works.
+    // Movement still reads isDown regardless of capture.
+    this.input.keyboard!.clearCaptures();
 
     this.bindBus();
     gameBus.emit("enter-interior", { key: this.locationKey });
@@ -124,13 +127,6 @@ export class InteriorScene extends Phaser.Scene {
   private bindBus() {
     const onInput = ({ enabled }: { enabled: boolean }) => {
       this.inputEnabled = enabled;
-      // Release Phaser's GLOBAL keyboard capture while UI panels are open,
-      // otherwise the KeyboardManager preventDefault()s keys (incl. Space) and
-      // breaks typing in HTML inputs.
-      if (this.input.keyboard) {
-        if (enabled) this.input.keyboard.enableGlobalCapture();
-        else this.input.keyboard.disableGlobalCapture();
-      }
       if (!enabled) this.player.setVelocity(0, 0);
     };
     const onEdit = ({ enabled }: { enabled: boolean }) => this.setEdit(enabled);
