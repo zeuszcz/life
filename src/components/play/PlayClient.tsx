@@ -8,7 +8,9 @@ import { LOCATION_META, type LocationKey } from "@/lib/game/constants";
 import type { PlayState } from "@/lib/types";
 import type { Appearance } from "@/lib/zod-schemas";
 import { getRoom, saveRoom } from "@/server/actions/rooms";
+import { getDailyState } from "@/server/actions/daily";
 import Hud from "./Hud";
+import TodayModal from "./TodayModal";
 import Toasts from "./Toasts";
 import LocationPanel from "./LocationPanel";
 import GoalsModal from "./GoalsModal";
@@ -25,7 +27,7 @@ const GameCanvas = dynamic(() => import("@/components/GameCanvas"), {
   ),
 });
 
-type Modal = "goals" | "shop" | "log" | null;
+type Modal = "today" | "goals" | "shop" | "log" | null;
 
 export default function PlayClient({
   initialPlay,
@@ -48,6 +50,15 @@ export default function PlayClient({
   useEffect(() => {
     setPlay(initialPlay);
   }, [initialPlay, setPlay]);
+
+  // Daily check-in: auto-open "Today" on the first visit of the day.
+  useEffect(() => {
+    getDailyState()
+      .then((s) => {
+        if (!s.claimedToday) setModal("today");
+      })
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     const onNear = ({ key }: { key: LocationKey }) => setNear(key);
@@ -118,6 +129,7 @@ export default function PlayClient({
       {!editMode && (
         <Hud
           appearance={appearance}
+          onOpenToday={() => setModal("today")}
           onOpenGoals={() => setModal("goals")}
           onOpenShop={() => setModal("shop")}
           onOpenLog={() => setModal("log")}
@@ -160,6 +172,7 @@ export default function PlayClient({
       )}
 
       {openLocation && <LocationPanel locationKey={openLocation} onClose={() => setOpen(null)} />}
+      {modal === "today" && <TodayModal onClose={() => setModal(null)} />}
       {modal === "goals" && <GoalsModal onClose={() => setModal(null)} />}
       {modal === "shop" && <ShopModal onClose={() => setModal(null)} />}
       {modal === "log" && <LogRealModal onClose={() => setModal(null)} />}

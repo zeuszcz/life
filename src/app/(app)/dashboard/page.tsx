@@ -12,6 +12,7 @@ import AvatarPreview from "@/components/AvatarPreview";
 const ACTIVITY_LABEL: Record<string, string> = {
   task_complete: "Задание выполнено",
   goal_complete: "Цель достигнута",
+  daily_bonus: "Бонус за вход",
   level_up: "Новый уровень",
   achievement: "Достижение",
   purchase: "Покупка в игре",

@@ -119,3 +119,28 @@ export async function deleteGoal(goalId: string): Promise<{ ok: boolean }> {
   await prisma.goal.deleteMany({ where: { id: goalId, userId } });
   return { ok: true };
 }
+
+export interface TodayTaskView {
+  id: string;
+  title: string;
+  goalTitle: string;
+  domain: Domain;
+}
+
+/** A few not-yet-done tasks across active goals — for the "Today" hub. */
+export async function getTodayTasks(limit = 6): Promise<TodayTaskView[]> {
+  const userId = await requireUserId();
+  const goals = await prisma.goal.findMany({
+    where: { userId, status: "active" },
+    orderBy: { createdAt: "asc" },
+    include: { tasks: { where: { done: false }, orderBy: { order: "asc" } } },
+  });
+  const out: TodayTaskView[] = [];
+  for (const g of goals) {
+    for (const t of g.tasks) {
+      out.push({ id: t.id, title: t.title, goalTitle: g.title, domain: g.domain as Domain });
+      if (out.length >= limit) return out;
+    }
+  }
+  return out;
+}

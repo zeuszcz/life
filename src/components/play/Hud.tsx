@@ -9,11 +9,13 @@ import { signOutAction } from "@/server/actions/auth";
 
 export default function Hud({
   appearance,
+  onOpenToday,
   onOpenGoals,
   onOpenShop,
   onOpenLog,
 }: {
   appearance: Appearance;
+  onOpenToday: () => void;
   onOpenGoals: () => void;
   onOpenShop: () => void;
   onOpenLog: () => void;
@@ -64,6 +66,7 @@ export default function Hud({
       {/* Bottom action bar */}
       <div className="pointer-events-none absolute inset-x-0 bottom-0 z-30 p-3">
         <div className="panel pointer-events-auto mx-auto flex max-w-5xl flex-wrap items-center justify-center gap-2 px-3 py-2">
+          <button className="btn btn-primary" onClick={onOpenToday}>📅 Сегодня</button>
           <button className="btn" onClick={onOpenGoals}>🎯 Цели</button>
           <button className="btn" onClick={onOpenShop}>🛒 Магазин</button>
           <button className="btn" onClick={onOpenLog}>📝 Записать</button>

@@ -23,6 +23,7 @@ model User {
   achievements UserAchievement[]
   activity     ActivityLog[]
   roomItems    RoomItem[]
+  habits       Habit[]
 }
 
 model Character {
@@ -31,12 +32,14 @@ model Character {
   user       User            @relation(fields: [userId], references: [id], onDelete: Cascade)
   name       String
   appearance Json // { body, hair, hairColor, outfit, outfitColor }
-  level      Int             @default(1)
-  xp         Int             @default(0) // total accumulated xp
-  gold       Int             @default(0)
-  createdAt  DateTime        @default(now())
-  stats      Stat[]
-  inventory  InventoryItem[]
+  level          Int             @default(1)
+  xp             Int             @default(0) // total accumulated xp
+  gold           Int             @default(0)
+  dayStreak      Int             @default(0) // consecutive active days
+  lastActiveDate DateTime? // last day the login bonus was claimed
+  createdAt      DateTime        @default(now())
+  stats          Stat[]
+  inventory      InventoryItem[]
 }
 
 model Stat {
@@ -83,6 +86,23 @@ model GoalTask {
   createdAt   DateTime  @default(now())
 
   @@index([goalId])
+}
+
+// Recurring daily habit with streak tracking (the daily loop).
+model Habit {
+  id            String    @id @default(cuid())
+  userId        String
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  domain        String // fitness | career | wellbeing | knowledge
+  title         String
+  xpReward      Int       @default(15)
+  goldReward    Int       @default(4)
+  currentStreak Int       @default(0)
+  bestStreak    Int       @default(0)
+  lastDoneAt    DateTime? // last completion (date used for "done today" + streak)
+  createdAt     DateTime  @default(now())
+
+  @@index([userId])
 }
 
 model AchievementDef {
