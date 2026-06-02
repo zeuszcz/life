@@ -8,6 +8,9 @@ import { DOMAINS, DOMAIN_META, type Domain } from "@/lib/game/constants";
 import { CATALOG_BY_KEY } from "@/lib/game/catalog";
 import { AppearanceSchema } from "@/lib/zod-schemas";
 import AvatarPreview from "@/components/AvatarPreview";
+import WeeklyReview from "@/components/dashboard/WeeklyReview";
+
+const MOOD_EMOJI = ["", "😞", "🙁", "😐", "🙂", "😄"];
 
 const ACTIVITY_LABEL: Record<string, string> = {
   task_complete: "Задание выполнено",
@@ -31,15 +34,17 @@ export default async function DashboardPage() {
   });
   if (!character) redirect("/onboarding");
 
-  const [stats, defs, unlocked, activity, tasksCompleted, goalsActive, goalsDone] = await Promise.all([
-    getOrCreateStats(character.id),
-    prisma.achievementDef.findMany({ orderBy: { threshold: "asc" } }),
-    prisma.userAchievement.findMany({ where: { userId } }),
-    prisma.activityLog.findMany({ where: { userId }, orderBy: { createdAt: "desc" }, take: 20 }),
-    prisma.activityLog.count({ where: { userId, type: "task_complete" } }),
-    prisma.goal.count({ where: { userId, status: "active" } }),
-    prisma.goal.count({ where: { userId, status: "done" } }),
-  ]);
+  const [stats, defs, unlocked, activity, tasksCompleted, goalsActive, goalsDone, moods] =
+    await Promise.all([
+      getOrCreateStats(character.id),
+      prisma.achievementDef.findMany({ orderBy: { threshold: "asc" } }),
+      prisma.userAchievement.findMany({ where: { userId } }),
+      prisma.activityLog.findMany({ where: { userId }, orderBy: { createdAt: "desc" }, take: 20 }),
+      prisma.activityLog.count({ where: { userId, type: "task_complete" } }),
+      prisma.goal.count({ where: { userId, status: "active" } }),
+      prisma.goal.count({ where: { userId, status: "done" } }),
+      prisma.diaryEntry.findMany({ where: { userId }, orderBy: { day: "desc" }, take: 14 }),
+    ]);
 
   const p = progress(character.xp);
   const appearance = AppearanceSchema.parse(character.appearance);
@@ -63,6 +68,7 @@ export default async function DashboardPage() {
             <span className="pixel text-xl text-white">{character.name}</span>
             <span className="chip">Lv {p.level}</span>
             <span className="chip" style={{ borderColor: "var(--gold)", color: "var(--gold)" }}>🪙 {character.gold}</span>
+            <span className="chip" style={{ borderColor: "#f5a623", color: "#f5a623" }}>🔥 {character.dayStreak} дн.</span>
           </div>
           <div className="mt-2 flex items-center gap-2">
             <div className="xp-track w-full max-w-sm"><div className="xp-fill" style={{ width: `${pct}%` }} /></div>
@@ -73,6 +79,23 @@ export default async function DashboardPage() {
             <b className="text-white">{goalsActive}</b> активных, <b className="text-white">{goalsDone}</b> завершено
           </div>
         </div>
+      </section>
+
+      {/* Mood + weekly AI review */}
+      <section className="mt-6 grid gap-3 sm:grid-cols-2">
+        <div className="card p-4">
+          <h3 className="pixel mb-2 text-sm text-white">Настроение (14 дней)</h3>
+          {moods.length === 0 ? (
+            <p className="text-xs text-[var(--muted)]">Отмечай настроение в «Сегодня» — здесь появится тренд.</p>
+          ) : (
+            <div className="flex flex-wrap gap-1.5 text-2xl">
+              {[...moods].reverse().map((m) => (
+                <span key={m.id} title={new Date(m.day).toLocaleDateString("ru-RU")}>{MOOD_EMOJI[m.mood]}</span>
+              ))}
+            </div>
+          )}
+        </div>
+        <WeeklyReview />
       </section>
 
       {/* Stats */}

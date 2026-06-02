@@ -26,6 +26,21 @@ export interface NextGoalResult {
   tasks: string[];
 }
 
+export interface WeeklyReviewContext {
+  characterName: string;
+  level: number;
+  tasksThisWeek: number;
+  habitsTracked: number;
+  bestStreak: number;
+  dayStreak: number;
+}
+
+export interface WeeklyReviewResult {
+  summary: string;
+  encouragement: string;
+  suggestion: string;
+}
+
 /**
  * Pluggable AI mentor. It is invoked ONLY when a goal is added
  * (generateGoalTasks) or completed (suggestNextGoal) — never on every checkbox.
@@ -35,4 +50,5 @@ export interface AIProvider {
   readonly model: string;
   generateGoalTasks(goal: GoalContext): Promise<GoalTasksResult>;
   suggestNextGoal(ctx: NextGoalContext): Promise<NextGoalResult>;
+  reviewWeek(ctx: WeeklyReviewContext): Promise<WeeklyReviewResult>;
 }

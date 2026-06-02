@@ -1,19 +1,24 @@
 import Anthropic from "@anthropic-ai/sdk";
-import { GoalTasksSchema, NextGoalSchema } from "@/lib/zod-schemas";
+import { GoalTasksSchema, NextGoalSchema, WeeklyReviewSchema } from "@/lib/zod-schemas";
 import type {
   AIProvider,
   GoalContext,
   GoalTasksResult,
   NextGoalContext,
   NextGoalResult,
+  WeeklyReviewContext,
+  WeeklyReviewResult,
 } from "./types";
 import {
   TASKS_SYSTEM,
   NEXT_GOAL_SYSTEM,
+  WEEKLY_REVIEW_SYSTEM,
   buildTasksPrompt,
   buildNextGoalPrompt,
+  buildWeeklyReviewPrompt,
   GOAL_TASKS_JSON_SCHEMA,
   NEXT_GOAL_JSON_SCHEMA,
+  WEEKLY_REVIEW_JSON_SCHEMA,
 } from "./prompt";
 
 // Claude implementation. Forced tool use guarantees structured JSON; prompt
@@ -73,5 +78,15 @@ export class ClaudeProvider implements AIProvider {
       NEXT_GOAL_JSON_SCHEMA,
     );
     return NextGoalSchema.parse(input);
+  }
+
+  async reviewWeek(ctx: WeeklyReviewContext): Promise<WeeklyReviewResult> {
+    const input = await this.callTool(
+      WEEKLY_REVIEW_SYSTEM,
+      buildWeeklyReviewPrompt(ctx),
+      "emit_review",
+      WEEKLY_REVIEW_JSON_SCHEMA,
+    );
+    return WeeklyReviewSchema.parse(input);
   }
 }

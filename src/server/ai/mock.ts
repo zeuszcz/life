@@ -1,4 +1,4 @@
-import { GoalTasksSchema, NextGoalSchema } from "@/lib/zod-schemas";
+import { GoalTasksSchema, NextGoalSchema, WeeklyReviewSchema } from "@/lib/zod-schemas";
 import { DOMAIN_META } from "@/lib/game/constants";
 import type {
   AIProvider,
@@ -6,6 +6,8 @@ import type {
   GoalTasksResult,
   NextGoalContext,
   NextGoalResult,
+  WeeklyReviewContext,
+  WeeklyReviewResult,
 } from "./types";
 
 // Deterministic, offline provider. Lets the whole loop run with no API keys.
@@ -39,6 +41,22 @@ export class MockProvider implements AIProvider {
         `Делать ключевое действие 3 раза в неделю`,
         `Отметить прогресс в конце недели`,
       ],
+    });
+  }
+
+  async reviewWeek(ctx: WeeklyReviewContext): Promise<WeeklyReviewResult> {
+    const active = ctx.tasksThisWeek > 0;
+    return WeeklyReviewSchema.parse({
+      summary: active
+        ? `За неделю ты выполнил ${ctx.tasksThisWeek} действий, стрик ${ctx.dayStreak} дн., уровень ${ctx.level}.`
+        : `Неделя была спокойной — самое время сделать хотя бы один маленький шаг.`,
+      encouragement: active
+        ? "Так держать — постоянство решает больше, чем рывки."
+        : "Начни с одного действия сегодня — этого достаточно.",
+      suggestion:
+        ctx.habitsTracked === 0
+          ? "Заведи одну простую ежедневную привычку на 2 минуты."
+          : "Выбери одну привычку и доведи её стрик до 7 дней.",
     });
   }
 }

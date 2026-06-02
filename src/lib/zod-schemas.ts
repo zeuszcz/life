@@ -73,6 +73,13 @@ export const NextGoalSchema = z.object({
 });
 export type NextGoalResult = z.infer<typeof NextGoalSchema>;
 
+export const WeeklyReviewSchema = z.object({
+  summary: z.string().trim().max(600).default(""),
+  encouragement: z.string().trim().max(400).default(""),
+  suggestion: z.string().trim().max(400).default(""),
+});
+export type WeeklyReviewResult = z.infer<typeof WeeklyReviewSchema>;
+
 // ---------------------------------------------------------------------------
 // Shop / real-life logging
 // ---------------------------------------------------------------------------

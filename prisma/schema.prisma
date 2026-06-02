@@ -24,6 +24,7 @@ model User {
   activity     ActivityLog[]
   roomItems    RoomItem[]
   habits       Habit[]
+  diary        DiaryEntry[]
 }
 
 model Character {
@@ -103,6 +104,19 @@ model Habit {
   createdAt     DateTime  @default(now())
 
   @@index([userId])
+}
+
+// Daily mood check-in + short journal note (one per day per user).
+model DiaryEntry {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  day       DateTime // start-of-day marker
+  mood      Int      @default(3) // 1..5
+  note      String   @default("")
+  createdAt DateTime @default(now())
+
+  @@unique([userId, day])
 }
 
 model AchievementDef {

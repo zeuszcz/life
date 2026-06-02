@@ -1,5 +1,5 @@
 import { DOMAINS, DOMAIN_META } from "@/lib/game/constants";
-import type { GoalContext, NextGoalContext } from "./types";
+import type { GoalContext, NextGoalContext, WeeklyReviewContext } from "./types";
 
 const DOMAIN_LINES = DOMAINS.map(
   (d) => `- ${d} — ${DOMAIN_META[d].label} (${DOMAIN_META[d].icon})`,
@@ -69,4 +69,31 @@ export const NEXT_GOAL_JSON_SCHEMA = {
     tasks: { type: "array", items: { type: "string" } },
   },
   required: ["domain", "title", "motivation", "tasks"],
+};
+
+export const WEEKLY_REVIEW_SYSTEM = `Ты — тёплый ИИ-наставник в игре про саморазвитие "Life".
+По сухой статистике за неделю сделай короткий, поддерживающий обзор:
+- summary: 1-2 предложения, что произошло за неделю;
+- encouragement: 1 предложение искренней поддержки;
+- suggestion: ОДИН конкретный шаг на следующую неделю.
+Без занудства, без категоричных мед/фин обещаний. На русском. Только структура.`;
+
+export function buildWeeklyReviewPrompt(c: WeeklyReviewContext): string {
+  return [
+    `Персонаж: ${c.characterName}, уровень ${c.level}.`,
+    `За неделю: выполнено заданий/привычек — ${c.tasksThisWeek}; привычек заведено — ${c.habitsTracked};`,
+    `лучший стрик привычки — ${c.bestStreak}; дней подряд в игре — ${c.dayStreak}.`,
+    `Дай summary, encouragement и одну suggestion.`,
+  ].join("\n");
+}
+
+export const WEEKLY_REVIEW_JSON_SCHEMA = {
+  type: "object",
+  additionalProperties: false,
+  properties: {
+    summary: { type: "string" },
+    encouragement: { type: "string" },
+    suggestion: { type: "string" },
+  },
+  required: ["summary", "encouragement", "suggestion"],
 };

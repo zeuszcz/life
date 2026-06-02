@@ -13,6 +13,15 @@ import {
 } from "@/server/actions/habits";
 import { getTodayTasks, type TodayTaskView } from "@/server/actions/goals";
 import { toggleTask } from "@/server/actions/tasks";
+import { getTodayDiary, saveDiary } from "@/server/actions/diary";
+
+const MOODS = [
+  { v: 1, e: "😞" },
+  { v: 2, e: "🙁" },
+  { v: 3, e: "😐" },
+  { v: 4, e: "🙂" },
+  { v: 5, e: "😄" },
+];
 
 const HABIT_PRESETS: Record<Domain, string[]> = {
   fitness: ["Зарядка 5 минут", "10 000 шагов", "Отжимания 2 подхода"],
@@ -32,6 +41,8 @@ export default function TodayModal({ onClose }: { onClose: () => void }) {
   const [newDomain, setNewDomain] = useState<Domain>("fitness");
   const [newTitle, setNewTitle] = useState("");
   const [busy, setBusy] = useState(false);
+  const [mood, setMood] = useState<number | null>(null);
+  const [note, setNote] = useState("");
 
   useEffect(() => {
     let alive = true;
@@ -45,6 +56,11 @@ export default function TodayModal({ onClose }: { onClose: () => void }) {
       }
       setHabits(await getHabits());
       setTasks(await getTodayTasks());
+      const d = await getTodayDiary();
+      if (alive && d) {
+        setMood(d.mood);
+        setNote(d.note);
+      }
     })();
     return () => {
       alive = false;
@@ -89,6 +105,19 @@ export default function TodayModal({ onClose }: { onClose: () => void }) {
     res.newAchievements?.forEach((a) => pushToast(`Достижение: ${a.title}`, a.icon));
   }
 
+  async function pickMood(v: number) {
+    setMood(v);
+    const res = await saveDiary(v, note);
+    if (res.firstToday) {
+      if (res.play) setPlay(res.play);
+      pushToast("Чек-ин настроения: +5 XP", "📝");
+    }
+  }
+  async function saveNote() {
+    if (mood == null) return;
+    await saveDiary(mood, note);
+  }
+
   return (
     <div className="modal-backdrop" onClick={onClose}>
       <div
@@ -107,6 +136,34 @@ export default function TodayModal({ onClose }: { onClose: () => void }) {
         </header>
 
         <div className="flex flex-col gap-4 overflow-y-auto p-4">
+          {/* Mood check-in */}
+          <section>
+            <h3 className="pixel mb-2 text-sm text-[var(--muted)]">Как ты сегодня?</h3>
+            <div className="flex gap-2">
+              {MOODS.map((m) => (
+                <button
+                  key={m.v}
+                  onClick={() => pickMood(m.v)}
+                  className="flex-1 rounded-lg border py-2 text-2xl"
+                  style={mood === m.v ? { borderColor: "var(--accent)", background: "#4ade8022" } : { borderColor: "var(--border)" }}
+                >
+                  {m.e}
+                </button>
+              ))}
+            </div>
+            <input
+              className="input mt-2 py-1.5 text-sm"
+              value={note}
+              maxLength={200}
+              placeholder="Пара слов о дне (необязательно)"
+              onChange={(e) => setNote(e.target.value)}
+              onBlur={saveNote}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") saveNote();
+              }}
+            />
+          </section>
+
           {/* Habits */}
           <section>
             <h3 className="pixel mb-2 text-sm text-[var(--muted)]">Ежедневные привычки</h3>
