@@ -1,11 +1,15 @@
 import Phaser from "phaser";
 import { LOCATIONS, LOCATION_META, type LocationKey } from "@/lib/game/constants";
 import { gameBus } from "@/lib/event-bus";
+import { frameFor, type Dir } from "@/lib/game/avatar";
+import { layerTextureKey } from "./BootScene";
 
 const TILE = 32;
 export const MAP_W = 26;
 export const MAP_H = 20;
-const SPEED = 135;
+const SPEED = 130;
+const AVATAR_SCALE = 0.72;
+const OVER_LAYERS = ["pants", "shirt", "hair"] as const;
 
 interface Door {
   key: LocationKey;
@@ -13,19 +17,20 @@ interface Door {
   y: number;
 }
 
-// The single open-world scene: a grass map with four buildings (gym / work /
-// home / study). Camera is slightly zoomed for an oblique top-down feel; the
-// buildings render with roof + wall + door and y-sort against the player.
+// Open-world scene: grass map with four buildings. The player is a layered LPC
+// avatar (body + pants + shirt + hair) with 4-direction walk animation and a
+// slightly zoomed, oblique top-down camera.
 export class WorldScene extends Phaser.Scene {
-  private player!: Phaser.Physics.Arcade.Sprite;
+  private player!: Phaser.Physics.Arcade.Sprite; // the body layer (carries physics)
+  private over: Phaser.GameObjects.Sprite[] = []; // pants/shirt/hair followers
   private cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
   private wasd!: Record<string, Phaser.Input.Keyboard.Key>;
   private eKey!: Phaser.Input.Keyboard.Key;
   private doors: Door[] = [];
   private near: LocationKey | null = null;
   private inputEnabled = true;
-  private walkTimer = 0;
-  private walkFrame = 0;
+  private facing: Dir = "down";
+  private animTime = 0;
 
   constructor() {
     super("World");
@@ -35,18 +40,15 @@ export class WorldScene extends Phaser.Scene {
     const worldW = MAP_W * TILE;
     const worldH = MAP_H * TILE;
 
-    // Ground
     this.add.tileSprite(0, 0, worldW, worldH, "grass").setOrigin(0, 0).setDepth(-10);
 
-    // Paths — a cross connecting the buildings, drawn as a low-depth layer.
     const paths = this.add.graphics().setDepth(-9);
     paths.fillStyle(0xcdb98a, 1);
     const midX = Math.floor(MAP_W / 2) * TILE;
     const midY = Math.floor(MAP_H / 2) * TILE;
-    paths.fillRect(0, midY - TILE, worldW, TILE * 2); // horizontal road
-    paths.fillRect(midX - TILE, 0, TILE * 2, worldH); // vertical road
+    paths.fillRect(0, midY - TILE, worldW, TILE * 2);
+    paths.fillRect(midX - TILE, 0, TILE * 2, worldH);
 
-    // Buildings + collision + door anchors
     const buildings = this.physics.add.staticGroup();
     for (const key of LOCATIONS) {
       const m = LOCATION_META[key];
@@ -61,44 +63,48 @@ export class WorldScene extends Phaser.Scene {
       buildings.add(collide);
 
       this.doors.push({ key, x: cx, y: baseY });
-      // spur path to the door
       paths.fillStyle(0xcdb98a, 1);
       paths.fillRect(cx - TILE * 0.5, baseY - TILE, TILE, midY - baseY + TILE);
     }
 
-    // Player
+    // Player — layered LPC avatar. The body sprite carries the physics body;
+    // pants/shirt/hair are follower sprites kept in sync each frame.
     const startX = midX + TILE;
     const startY = midY + TILE;
-    this.player = this.physics.add.sprite(startX, startY, "player_0");
+    this.player = this.physics.add.sprite(startX, startY, layerTextureKey("body"));
+    this.player.setScale(AVATAR_SCALE).setOrigin(0.5, 0.5);
+    const body = this.player.body as Phaser.Physics.Arcade.Body;
+    body.setSize(14, 10);
+    body.setOffset(25, 50);
     this.player.setCollideWorldBounds(true);
-    this.player.setSize(14, 10).setOffset(5, 20); // feet-only body
+    this.over = OVER_LAYERS.map((layer) =>
+      this.add.sprite(startX, startY, layerTextureKey(layer)).setScale(AVATAR_SCALE).setOrigin(0.5, 0.5),
+    );
+    this.setFrames(frameFor("down", false, 0));
     this.physics.add.collider(this.player, buildings);
 
-    // Camera — zoomed in for the chunky pixel / oblique look.
     this.cameras.main.setBounds(0, 0, worldW, worldH);
     this.cameras.main.startFollow(this.player, true, 0.12, 0.12);
-    this.cameras.main.setZoom(2.1);
+    this.cameras.main.setZoom(1.9);
     this.physics.world.setBounds(0, 0, worldW, worldH);
 
-    // Input
     this.cursors = this.input.keyboard!.createCursorKeys();
-    this.wasd = this.input.keyboard!.addKeys("W,A,S,D") as Record<
-      string,
-      Phaser.Input.Keyboard.Key
-    >;
+    this.wasd = this.input.keyboard!.addKeys("W,A,S,D") as Record<string, Phaser.Input.Keyboard.Key>;
     this.eKey = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.E);
 
-    // React <-> Phaser bridge
     const onInput = ({ enabled }: { enabled: boolean }) => {
       this.inputEnabled = enabled;
       if (!enabled) this.player.setVelocity(0, 0);
     };
     gameBus.on("set-input-enabled", onInput);
-    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
-      gameBus.off("set-input-enabled", onInput);
-    });
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => gameBus.off("set-input-enabled", onInput));
 
     gameBus.emit("game-ready");
+  }
+
+  private setFrames(frame: number) {
+    this.player.setFrame(frame);
+    this.over.forEach((s) => s.setFrame(frame));
   }
 
   private drawBuilding(cx: number, baseY: number, icon: string, label: string, colorHex: string) {
@@ -112,13 +118,10 @@ export class WorldScene extends Phaser.Scene {
     const wallH = TILE * 1.6;
     const roofH = TILE * 0.9;
 
-    // ground shadow
     g.fillStyle(0x000000, 0.16);
     g.fillEllipse(0, -2, w * 1.05, TILE * 0.5);
-    // wall
     g.fillStyle(dark, 1);
     g.fillRect(-w / 2, -wallH, w, wallH);
-    // roof (trapezoid → oblique 3D)
     g.fillStyle(light, 1);
     g.fillPoints(
       [
@@ -129,10 +132,8 @@ export class WorldScene extends Phaser.Scene {
       ],
       true,
     );
-    // door
     g.fillStyle(0x2b2b33, 1);
     g.fillRect(-TILE * 0.4, -TILE * 0.95, TILE * 0.8, TILE * 0.95);
-    // windows
     g.fillStyle(0xfff2b0, 0.9);
     g.fillRect(-w / 2 + 8, -wallH + 8, 8, 8);
     g.fillRect(w / 2 - 16, -wallH + 8, 8, 8);
@@ -170,19 +171,23 @@ export class WorldScene extends Phaser.Scene {
     if (moving) {
       const len = Math.hypot(vx, vy);
       body.setVelocity((vx / len) * SPEED, (vy / len) * SPEED);
-      if (vx < 0) this.player.setFlipX(true);
-      else if (vx > 0) this.player.setFlipX(false);
-      this.walkTimer += delta;
-      if (this.walkTimer > 160) {
-        this.walkTimer = 0;
-        this.walkFrame ^= 1;
-        this.player.setTexture(this.walkFrame ? "player_1" : "player_0");
-      }
+      if (Math.abs(vx) >= Math.abs(vy)) this.facing = vx < 0 ? "left" : "right";
+      else this.facing = vy < 0 ? "up" : "down";
+      this.animTime += delta;
     } else {
       body.setVelocity(0, 0);
-      this.player.setTexture("player_0");
     }
-    this.player.setDepth(this.player.y);
+
+    const step = Math.floor(this.animTime / 110);
+    this.setFrames(frameFor(this.facing, moving, step));
+
+    const x = this.player.x;
+    const y = this.player.y;
+    this.player.setDepth(y);
+    this.over.forEach((s, i) => {
+      s.setPosition(x, y);
+      s.setDepth(y + 0.1 * (i + 1));
+    });
 
     this.checkDoors();
   }

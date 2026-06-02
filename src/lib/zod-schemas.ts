@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { DOMAINS, QUEST_TYPES, DIFFICULTIES } from "@/lib/game/constants";
+import { SKINS, HAIR_STYLES, HAIR_COLORS, SHIRTS, PANTS } from "@/lib/game/avatar";
 
 // ---------------------------------------------------------------------------
 // Auth
@@ -19,12 +20,14 @@ export const LoginSchema = z.object({
 // ---------------------------------------------------------------------------
 // Character
 // ---------------------------------------------------------------------------
+// LPC-based modular appearance. `.default().catch()` keeps old/garbage values
+// from crashing reads — they gracefully fall back to a valid default.
 export const AppearanceSchema = z.object({
-  body: z.enum(["light", "tan", "dark"]).default("light"),
-  hair: z.enum(["short", "long", "buzz", "ponytail"]).default("short"),
-  hairColor: z.string().regex(/^#[0-9a-fA-F]{6}$/).default("#5a3a1a"),
-  outfit: z.enum(["casual", "sporty", "formal", "hoodie"]).default("casual"),
-  outfitColor: z.string().regex(/^#[0-9a-fA-F]{6}$/).default("#3b82f6"),
+  skin: z.enum(SKINS).default("light").catch("light"),
+  hairStyle: z.enum(HAIR_STYLES).default("plain").catch("plain"),
+  hairColor: z.enum(HAIR_COLORS).default("brown").catch("brown"),
+  shirt: z.enum(SHIRTS).default("white").catch("white"),
+  pants: z.enum(PANTS).default("teal").catch("teal"),
 });
 export type Appearance = z.infer<typeof AppearanceSchema>;
 

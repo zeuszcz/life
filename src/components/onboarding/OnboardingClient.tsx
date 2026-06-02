@@ -3,36 +3,26 @@
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import AvatarPreview from "@/components/AvatarPreview";
-import { AppearanceSchema, type Appearance, type GoalInput } from "@/lib/zod-schemas";
+import { type GoalInput } from "@/lib/zod-schemas";
 import { DOMAINS, DOMAIN_META, type Domain } from "@/lib/game/constants";
+import {
+  SKINS,
+  HAIR_STYLES,
+  HAIR_COLORS,
+  SHIRTS,
+  PANTS,
+  SKIN_HEX,
+  HAIR_HEX,
+  CLOTH_HEX,
+  SKIN_LABEL,
+  HAIR_STYLE_LABEL,
+  DEFAULT_AVATAR,
+  type AvatarConfig,
+} from "@/lib/game/avatar";
 import { createCharacter } from "@/server/actions/character";
 import { submitGoalsAndGenerate } from "@/server/actions/goals";
 
 type Step = "character" | "goals" | "generating";
-
-const BODIES: Appearance["body"][] = ["light", "tan", "dark"];
-const HAIRS: Appearance["hair"][] = ["short", "long", "buzz", "ponytail"];
-const OUTFITS: Appearance["outfit"][] = ["casual", "sporty", "formal", "hoodie"];
-const HAIR_COLORS = ["#5a3a1a", "#1c1c1c", "#caa472", "#b5453b", "#6d28d9", "#e2e8f0"];
-const OUTFIT_COLORS = ["#3b82f6", "#ef4444", "#22c55e", "#a855f7", "#f59e0b", "#0ea5e9"];
-
-const HAIR_LABEL: Record<Appearance["hair"], string> = {
-  short: "Короткие",
-  long: "Длинные",
-  buzz: "Ёжик",
-  ponytail: "Хвост",
-};
-const OUTFIT_LABEL: Record<Appearance["outfit"], string> = {
-  casual: "Кэжуал",
-  sporty: "Спорт",
-  formal: "Деловой",
-  hoodie: "Худи",
-};
-const BODY_LABEL: Record<Appearance["body"], string> = {
-  light: "Светлый",
-  tan: "Загар",
-  dark: "Тёмный",
-};
 
 interface DraftGoal {
   domain: Domain;
@@ -59,19 +49,17 @@ export default function OnboardingClient({
   initialAppearance,
 }: {
   initialName: string;
-  initialAppearance?: Appearance;
+  initialAppearance?: AvatarConfig;
 }) {
   const router = useRouter();
   const [step, setStep] = useState<Step>("character");
   const [name, setName] = useState(initialName);
-  const [appearance, setAppearance] = useState<Appearance>(
-    initialAppearance ?? AppearanceSchema.parse({}),
-  );
+  const [appearance, setAppearance] = useState<AvatarConfig>(initialAppearance ?? DEFAULT_AVATAR);
   const [goals, setGoals] = useState<DraftGoal[]>([emptyGoal("fitness")]);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
-  const setAp = <K extends keyof Appearance>(k: K, v: Appearance[K]) =>
+  const setAp = <K extends keyof AvatarConfig>(k: K, v: AvatarConfig[K]) =>
     setAppearance((a) => ({ ...a, [k]: v }));
 
   const updateGoal = (i: number, patch: Partial<DraftGoal>) =>
@@ -129,7 +117,7 @@ export default function OnboardingClient({
           <div className="flex flex-col gap-6 sm:flex-row">
             <div className="flex flex-col items-center gap-3">
               <div className="card flex items-center justify-center p-4" style={{ background: "#0e1626" }}>
-                <AvatarPreview appearance={appearance} size={120} />
+                <AvatarPreview appearance={appearance} size={132} animated />
               </div>
             </div>
 
@@ -143,11 +131,11 @@ export default function OnboardingClient({
                 placeholder="Например: Алекс"
               />
 
-              <Picker label="Тон кожи" value={appearance.body} options={BODIES} render={(b) => BODY_LABEL[b]} onPick={(v) => setAp("body", v)} />
-              <Picker label="Причёска" value={appearance.hair} options={HAIRS} render={(h) => HAIR_LABEL[h]} onPick={(v) => setAp("hair", v)} />
-              <Swatches label="Цвет волос" value={appearance.hairColor} options={HAIR_COLORS} onPick={(v) => setAp("hairColor", v)} />
-              <Picker label="Стиль одежды" value={appearance.outfit} options={OUTFITS} render={(o) => OUTFIT_LABEL[o]} onPick={(v) => setAp("outfit", v)} />
-              <Swatches label="Цвет одежды" value={appearance.outfitColor} options={OUTFIT_COLORS} onPick={(v) => setAp("outfitColor", v)} />
+              <ColorRow label="Тон кожи" value={appearance.skin} options={SKINS} hexFor={(s) => SKIN_HEX[s]} labelFor={(s) => SKIN_LABEL[s]} onPick={(v) => setAp("skin", v)} />
+              <Picker label="Причёска" value={appearance.hairStyle} options={HAIR_STYLES} render={(h) => HAIR_STYLE_LABEL[h]} onPick={(v) => setAp("hairStyle", v)} />
+              <ColorRow label="Цвет волос" value={appearance.hairColor} options={HAIR_COLORS} hexFor={(c) => HAIR_HEX[c]} onPick={(v) => setAp("hairColor", v)} />
+              <ColorRow label="Рубашка" value={appearance.shirt} options={SHIRTS} hexFor={(c) => CLOTH_HEX[c]} onPick={(v) => setAp("shirt", v)} />
+              <ColorRow label="Штаны" value={appearance.pants} options={PANTS} hexFor={(c) => CLOTH_HEX[c]} onPick={(v) => setAp("pants", v)} />
             </div>
           </div>
 
@@ -291,7 +279,7 @@ function Picker<T extends string>({
 }: {
   label: string;
   value: T;
-  options: T[];
+  options: readonly T[];
   render: (v: T) => string;
   onPick: (v: T) => void;
 }) {
@@ -314,28 +302,33 @@ function Picker<T extends string>({
   );
 }
 
-function Swatches({
+function ColorRow<T extends string>({
   label,
   value,
   options,
+  hexFor,
+  labelFor,
   onPick,
 }: {
   label: string;
-  value: string;
-  options: string[];
-  onPick: (v: string) => void;
+  value: T;
+  options: readonly T[];
+  hexFor: (v: T) => string;
+  labelFor?: (v: T) => string;
+  onPick: (v: T) => void;
 }) {
   return (
     <div className="mb-3">
       <label className="label">{label}</label>
       <div className="flex flex-wrap gap-2">
-        {options.map((c) => (
+        {options.map((o) => (
           <button
-            key={c}
-            onClick={() => onPick(c)}
-            aria-label={c}
-            className="h-7 w-7 rounded-full border-2"
-            style={{ background: c, borderColor: value === c ? "#fff" : "transparent" }}
+            key={o}
+            onClick={() => onPick(o)}
+            title={labelFor ? labelFor(o) : o}
+            aria-label={labelFor ? labelFor(o) : o}
+            className="h-8 w-8 rounded-full border-2"
+            style={{ background: hexFor(o), borderColor: value === o ? "#fff" : "transparent" }}
           />
         ))}
       </div>
