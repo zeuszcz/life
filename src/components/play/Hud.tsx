@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import AvatarPreview from "@/components/AvatarPreview";
 import { useGameStore } from "@/lib/store";
 import { DOMAINS, DOMAIN_META } from "@/lib/game/constants";
@@ -13,12 +12,14 @@ export default function Hud({
   onOpenGoals,
   onOpenShop,
   onOpenLog,
+  onOpenProfile,
 }: {
   appearance: Appearance;
   onOpenToday: () => void;
   onOpenGoals: () => void;
   onOpenShop: () => void;
   onOpenLog: () => void;
+  onOpenProfile: () => void;
 }) {
   const play = useGameStore((s) => s.play);
   if (!play) return null;
@@ -70,7 +71,7 @@ export default function Hud({
           <button className="btn" onClick={onOpenGoals}>🎯 Цели</button>
           <button className="btn" onClick={onOpenShop}>🛒 Магазин</button>
           <button className="btn" onClick={onOpenLog}>📝 Записать</button>
-          <Link className="btn" href="/dashboard">📊 Профиль</Link>
+          <button className="btn" onClick={onOpenProfile}>📊 Прогресс</button>
           <form action={signOutAction}>
             <button className="btn btn-ghost" type="submit">Выйти</button>
           </form>

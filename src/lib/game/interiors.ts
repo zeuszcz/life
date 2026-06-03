@@ -37,6 +37,8 @@ export const BUILTIN_DECOR: Record<LocationKey, DecorItem[]> = {
     { key: "dumbbells", x: 250, y: 232 },
     { key: "mat", x: 120, y: 290 },
     { key: "plant", x: 510, y: 300 },
+    { key: "trophy", x: 188, y: 300 },
+    { key: "dumbbells", x: 430, y: 300 },
   ],
   work: [
     { key: "desk", x: 140, y: 170 },
@@ -44,9 +46,11 @@ export const BUILTIN_DECOR: Record<LocationKey, DecorItem[]> = {
     { key: "chair", x: 140, y: 212 },
     { key: "desk", x: 360, y: 170 },
     { key: "monitor", x: 360, y: 156 },
+    { key: "chair", x: 360, y: 212 },
     { key: "whiteboard", x: 470, y: 92 },
     { key: "coffee", x: 510, y: 300 },
     { key: "plant", x: 70, y: 300 },
+    { key: "trophy", x: 78, y: 120 },
   ],
   home: [
     { key: "bed", x: 100, y: 150 },
@@ -55,6 +59,8 @@ export const BUILTIN_DECOR: Record<LocationKey, DecorItem[]> = {
     { key: "rug", x: 290, y: 255 },
     { key: "lamp", x: 510, y: 250 },
     { key: "plant", x: 70, y: 300 },
+    { key: "table", x: 380, y: 300 },
+    { key: "bookshelf", x: 110, y: 300 },
   ],
   study: [
     { key: "bookshelf", x: 130, y: 96 },
@@ -63,5 +69,7 @@ export const BUILTIN_DECOR: Record<LocationKey, DecorItem[]> = {
     { key: "chair", x: 330, y: 220 },
     { key: "globe", x: 410, y: 165 },
     { key: "lamp", x: 95, y: 285 },
+    { key: "plant", x: 500, y: 300 },
+    { key: "trophy", x: 470, y: 100 },
   ],
 };

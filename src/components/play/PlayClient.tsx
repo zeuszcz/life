@@ -16,6 +16,7 @@ import LocationPanel from "./LocationPanel";
 import GoalsModal from "./GoalsModal";
 import ShopModal from "./ShopModal";
 import LogRealModal from "./LogRealModal";
+import ProfileModal from "./ProfileModal";
 import DecorateBar from "./DecorateBar";
 
 const GameCanvas = dynamic(() => import("@/components/GameCanvas"), {
@@ -27,7 +28,7 @@ const GameCanvas = dynamic(() => import("@/components/GameCanvas"), {
   ),
 });
 
-type Modal = "today" | "goals" | "shop" | "log" | null;
+type Modal = "today" | "goals" | "shop" | "log" | "profile" | null;
 
 export default function PlayClient({
   initialPlay,
@@ -133,6 +134,7 @@ export default function PlayClient({
           onOpenGoals={() => setModal("goals")}
           onOpenShop={() => setModal("shop")}
           onOpenLog={() => setModal("log")}
+          onOpenProfile={() => setModal("profile")}
         />
       )}
 
@@ -176,6 +178,7 @@ export default function PlayClient({
       {modal === "goals" && <GoalsModal onClose={() => setModal(null)} />}
       {modal === "shop" && <ShopModal onClose={() => setModal(null)} />}
       {modal === "log" && <LogRealModal onClose={() => setModal(null)} />}
+      {modal === "profile" && <ProfileModal appearance={appearance} onClose={() => setModal(null)} />}
 
       <Toasts />
     </div>
